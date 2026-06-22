@@ -1,0 +1,16 @@
+import jwt from 'jsonwebtoken';
+import { env } from '../config/env.js';
+import { ApiError } from '../utils/ApiError.js';
+export function authMiddleware(req, _res, next) {
+    const header = req.headers.authorization;
+    const token = header?.startsWith('Bearer ') ? header.slice(7) : null;
+    if (!token)
+        throw new ApiError(401, 'Authentication required');
+    try {
+        req.user = jwt.verify(token, env.jwtSecret);
+        next();
+    }
+    catch {
+        throw new ApiError(401, 'Invalid or expired token');
+    }
+}

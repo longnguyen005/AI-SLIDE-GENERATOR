@@ -1,0 +1,51 @@
+.landing-page { background: #faf9ff; color: #111827; }
+.landing-nav { position: sticky; top: 0; z-index: 20; height: 72px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 28px; border-bottom: 1px solid #e7e5f2; background: rgba(250,249,255,.92); backdrop-filter: blur(14px); }
+.landing-nav nav { display: flex; gap: 30px; color: #59566a; font-size: 14px; }
+.landing-nav nav a:hover { color: #4338ca; }
+.landing-nav__actions { justify-self: end; display: flex; gap: 8px; }
+.landing-hero { position: relative; overflow: hidden; min-height: 820px; display: grid; justify-items: center; align-content: start; text-align: center; padding: 76px 20px 0; }
+.landing-hero__glow { position: absolute; width: 620px; height: 620px; border-radius: 50%; background: rgba(124,58,237,.12); filter: blur(80px); top: 30px; }
+.landing-eyebrow { position: relative; z-index: 1; margin: 0 0 14px; color: #5c50dc; text-transform: uppercase; letter-spacing: .16em; font-size: 12px; font-weight: 900; }
+.landing-hero h1 { position: relative; z-index: 1; margin: 0; font-size: clamp(48px, 7vw, 88px); line-height: .98; letter-spacing: -.06em; }
+.landing-hero__copy { position: relative; z-index: 1; max-width: 720px; margin: 26px auto 24px; color: #656276; font-size: 18px; line-height: 1.65; }
+.landing-hero__actions { position: relative; z-index: 1; display: flex; gap: 12px; }
+.monitor-demo { position: relative; z-index: 1; width: min(760px, 92vw); margin-top: 58px; padding-bottom: 90px; }
+.monitor-demo__screen { aspect-ratio: 16 / 9; padding: 14px; border-radius: 24px; background: #101827; box-shadow: 0 40px 75px rgba(31, 25, 96, .2); }
+.monitor-demo__screen::after { content: ''; display: block; height: 100%; border-radius: 12px; background: #fff; }
+.monitor-demo__sidebar { position: absolute; z-index: 2; left: 29px; top: 29px; bottom: 119px; width: 152px; display: grid; align-content: start; gap: 18px; padding: 20px 16px; background: #f2f4ff; border-radius: 10px 0 0 10px; }
+.monitor-demo__sidebar span:not(.monitor-demo__mini-logo) { height: 9px; border-radius: 5px; background: #d7dcf6; }
+.monitor-demo__mini-logo { width: 44px; height: 44px; border-radius: 11px; background: linear-gradient(135deg,#4338ca,#8b5cf6); }
+.monitor-demo__canvas { position: absolute; z-index: 2; left: 181px; right: 30px; top: 30px; bottom: 119px; padding: 34px; border-radius: 0 10px 10px 0; background: #fff; }
+.monitor-demo__title { width: 48%; height: 18px; margin-bottom: 46px; border-radius: 8px; background: #dce2f8; }
+.monitor-demo__chart { height: 210px; display: flex; align-items: end; gap: 24px; padding: 0 20px 0 10px; border-left: 2px solid #d3d6e6; border-bottom: 2px solid #d3d6e6; }
+.monitor-demo__chart i { flex: 1; min-width: 18px; background: linear-gradient(#0f6b8f,#7c3aed); border-radius: 5px 5px 0 0; }
+.monitor-demo__stand { width: 90px; height: 78px; margin: 0 auto; background: linear-gradient(#c9cdd2,#f5f5f5); clip-path: polygon(28% 0,72% 0,86% 100%,14% 100%); }
+.monitor-demo__base { width: 250px; height: 18px; margin: -1px auto 0; border-radius: 50%; background: #bfc3c8; }
+.landing-features { padding: 80px 5vw; background: #f0f1ff; }
+.section-heading { text-align: center; margin-bottom: 38px; }
+.section-heading p { margin: 0 0 8px; font-size: 28px; font-weight: 800; letter-spacing: -.03em; }
+.section-heading span { color: #777386; }
+.landing-features__grid { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+.landing-workflow { padding: 80px 5vw; }
+.workflow-line { position: relative; max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(4,1fr); gap: 24px; }
+.workflow-line::before { content: ''; position: absolute; left: 8%; right: 8%; top: 24px; height: 2px; background: #deddf0; }
+.workflow-line article { position: relative; z-index: 1; text-align: center; }
+.workflow-line article > span { width: 50px; height: 50px; display: grid; place-items: center; margin: 0 auto 17px; border-radius: 50%; color: #4338ca; background: #f1f0ff; border: 1px solid #d3d1f5; font-weight: 800; }
+.workflow-line article:first-child > span { color: #fff; background: #5b43e9; }
+.workflow-line h3 { margin: 0 0 8px; }
+.workflow-line p { margin: 0; color: #757184; font-size: 13px; line-height: 1.55; }
+.landing-stats { display: grid; grid-template-columns: repeat(3,1fr); padding: 42px 8vw; background: #eeecff; text-align: center; }
+.landing-stats div { display: grid; gap: 8px; }
+.landing-stats strong { color: #3326cf; font-size: 24px; }
+.landing-stats span { color: #676377; text-transform: uppercase; letter-spacing: .09em; font-size: 10px; }
+.landing-cta { margin: 74px auto; width: min(1180px,92vw); min-height: 260px; display: flex; align-items: center; justify-content: space-between; padding: 44px 70px; border-radius: 24px; color: #fff; background: linear-gradient(135deg,#4f46e5,#8b5cf6); }
+.landing-cta h2 { margin: 0 0 10px; font-size: 32px; }
+.landing-cta p { opacity: .84; }
+.landing-cta .btn { margin-top: 18px; background: #fff; }
+.landing-cta > svg { opacity: .25; }
+.landing-footer { display: grid; grid-template-columns: 2fr repeat(3,1fr); gap: 40px; padding: 58px 6vw 32px; border-top: 1px solid #e5e3ef; background: #f1f2ff; color: #666277; }
+.landing-footer > div { display: grid; align-content: start; gap: 10px; }
+.landing-footer strong { color: #2a2838; }
+.landing-footer__copyright { grid-column: 1/-1; text-align: center; border-top: 1px solid #dfdeec; padding-top: 26px; }
+@media (max-width: 900px) { .landing-nav { grid-template-columns: 1fr auto; } .landing-nav nav { display: none; } .landing-features__grid { grid-template-columns: repeat(2,1fr); } .workflow-line { grid-template-columns: repeat(2,1fr); } .workflow-line::before { display:none; } }
+@media (max-width: 640px) { .landing-nav { padding: 0 14px; } .landing-nav__actions .btn--ghost { display:none; } .landing-hero { min-height: 650px; padding-top: 52px; } .landing-hero__actions { flex-direction: column; width: min(320px,100%); } .monitor-demo { display:none; } .landing-features__grid, .workflow-line, .landing-stats, .landing-footer { grid-template-columns: 1fr; } .landing-cta { padding: 36px 28px; } .landing-cta > svg { display:none; } }

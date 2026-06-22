@@ -1,0 +1,17 @@
+.modal-backdrop { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 20px; background: rgba(34, 38, 58, .46); backdrop-filter: blur(5px); }
+.regenerate-modal { width: min(460px, 100%); overflow: hidden; border-radius: 17px; background: #fff; box-shadow: 0 30px 80px rgba(19, 20, 45, .3); border-bottom: 5px solid #9b6dff; }
+.regenerate-modal__header { min-height: 76px; display: grid; grid-template-columns: 40px 1fr 36px; align-items: center; gap: 10px; padding: 0 22px; border-bottom: 1px solid #dddbe8; }
+.regenerate-modal__header h2 { margin: 0; font-size: 23px; letter-spacing: -.02em; }
+.regenerate-modal__header button { border: 0; background: transparent; color: #777487; cursor: pointer; }
+.regenerate-modal__icon { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: linear-gradient(135deg, #4f46e5, #9333ea); }
+.regenerate-modal__body { padding: 22px; }
+.regenerate-modal__presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 25px; }
+.regenerate-modal__presets button { min-height: 34px; padding: 0 14px; border: 1px solid #cbc9dd; border-radius: 999px; background: #f9f8ff; color: #393648; cursor: pointer; }
+.regenerate-modal__presets button.is-selected { border-color: #5b4be1; background: #edeaff; color: #392acc; }
+.regenerate-modal label { display: block; margin-bottom: 10px; color: #7b788c; text-transform: uppercase; font-size: 13px; }
+.regenerate-modal textarea { width: 100%; min-height: 108px; resize: vertical; border: 1px solid #c9c6dc; border-radius: 12px; padding: 14px; outline: 0; background: #fcfbff; color: #323042; line-height: 1.45; }
+.regenerate-modal textarea:focus { border-color: #7165e3; box-shadow: 0 0 0 3px #f0efff; }
+.regenerate-modal__footer { display: flex; justify-content: flex-end; align-items: center; gap: 14px; padding: 12px 22px 22px; }
+.regenerate-modal__footer .btn { min-width: 220px; }
+.regenerate-modal__cancel { min-height: 44px; padding: 0 18px; border: 0; background: transparent; font-weight: 700; cursor: pointer; }
+@media (max-width: 520px) { .regenerate-modal__footer { flex-direction: column-reverse; } .regenerate-modal__footer .btn, .regenerate-modal__cancel { width: 100%; } }

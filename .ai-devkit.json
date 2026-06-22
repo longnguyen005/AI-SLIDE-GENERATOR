@@ -1,0 +1,17 @@
+{
+  "version": "0.40.0",
+  "environments": [
+    "codex"
+  ],
+  "phases": [
+    "requirements",
+    "design",
+    "planning",
+    "implementation",
+    "testing",
+    "deployment",
+    "monitoring"
+  ],
+  "createdAt": "2026-06-12T14:44:30.247Z",
+  "updatedAt": "2026-06-12T14:44:30.284Z"
+}

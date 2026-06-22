@@ -1,0 +1,13 @@
+.dashboard-main { background: #f8f9ff; }
+.dashboard-stats { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 22px; margin: 34px 0 44px; }
+.dashboard-section__heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+.dashboard-section__heading h2 { margin: 0; font-size: 22px; }
+.dashboard-section__heading a { display: inline-flex; align-items: center; gap: 6px; color: #3428cc; font-weight: 800; }
+.dashboard-decks { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 28px; align-items: stretch; }
+.new-deck-card { min-height: 318px; display: grid; place-items: center; align-content: center; gap: 10px; border: 2px dashed #d9d8e6; border-radius: 22px; color: #6d6a7d; background: rgba(255,255,255,.55); transition: border-color .2s ease, color .2s ease, transform .2s ease; }
+.new-deck-card:hover { color: #4338ca; border-color: #7c6fe5; transform: translateY(-3px); }
+.new-deck-card span { width: 70px; height: 70px; display: grid; place-items: center; border-radius: 50%; background: #ecebff; }
+.new-deck-card strong { color: #262435; font-size: 18px; }
+.new-deck-card small { font-size: 15px; }
+@media (max-width: 1200px) { .dashboard-stats { grid-template-columns: repeat(2,1fr); } .dashboard-decks { grid-template-columns: repeat(2,1fr); } }
+@media (max-width: 620px) { .dashboard-stats, .dashboard-decks { grid-template-columns: 1fr; } }

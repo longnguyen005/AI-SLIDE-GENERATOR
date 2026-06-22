@@ -1,0 +1,11 @@
+.progress-steps { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); margin: 26px 10px 34px; }
+.progress-steps__line { position: absolute; top: 20px; left: 12.5%; right: 12.5%; height: 2px; background: #d9d8eb; }
+.progress-steps__line span { display: block; height: 100%; background: #4338ca; }
+.progress-step { position: relative; z-index: 1; display: grid; justify-items: center; gap: 8px; color: #565365; font-size: 13px; }
+.progress-step__dot { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50%; border: 2px solid #c9c8dc; background: #eeeff9; color: #fff; }
+.progress-step__dot > span { width: 11px; height: 11px; border-radius: 50%; background: #c6c5d8; }
+.progress-step--active { color: #3427c9; }
+.progress-step--active .progress-step__dot { border: 6px solid #c8c5ff; background: #4338ca; }
+.progress-step--active .progress-step__dot > span { background: #fff; }
+.progress-step--complete .progress-step__dot { border-color: #4338ca; background: #4338ca; }
+@media (max-width: 600px) { .progress-step strong { display: none; } }

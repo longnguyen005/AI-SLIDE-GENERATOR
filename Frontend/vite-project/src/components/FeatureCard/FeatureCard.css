@@ -1,0 +1,4 @@
+.feature-card { padding: 24px; border-radius: 14px; border: 1px solid #e5e4ef; background: #fff; }
+.feature-card > span { width: 35px; height: 35px; display: grid; place-items: center; color: #4338ca; border-radius: 10px; background: #eeecff; }
+.feature-card h3 { margin: 18px 0 8px; font-size: 16px; }
+.feature-card p { margin: 0; color: #666477; line-height: 1.65; font-size: 14px; }

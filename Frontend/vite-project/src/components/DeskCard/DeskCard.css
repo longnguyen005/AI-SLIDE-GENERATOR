@@ -1,0 +1,17 @@
+.deck-card { position: relative; min-width: 0; padding: 14px; border: 1px solid #e4e3ee; border-radius: 22px; background: #fff; box-shadow: 0 8px 22px rgba(36, 30, 90, .05); transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
+.deck-card:hover { transform: translateY(-4px); box-shadow: 0 16px 30px rgba(36, 30, 90, .11); }
+.deck-card--selected { border: 2px solid #3427d2; box-shadow: 0 10px 24px rgba(52, 39, 210, .16); }
+.deck-card__check { position: absolute; z-index: 2; top: -10px; right: -8px; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: #4338ca; border: 3px solid #fff; }
+.deck-card__cover { position: relative; height: 166px; overflow: hidden; border-radius: 16px; display: grid; place-items: center; color: rgba(255,255,255,.5); }
+.deck-card__cover::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 80% 80%, rgba(255,255,255,.18), transparent 22%); }
+.deck-card__cover--purple { background: linear-gradient(135deg, #3121df, #7939f3); }
+.deck-card__cover--blue { background: linear-gradient(135deg, #4f46e5, #2563eb); }
+.deck-card__cover--pink { background: linear-gradient(135deg, #8b2ee8, #ec4899); }
+.deck-card__cover--dark { background: linear-gradient(135deg, #10172f, #252f6c); }
+.deck-card__cover-icon { position: relative; z-index: 1; }
+.deck-card__slides { position: absolute; top: 14px; right: 14px; z-index: 1; padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,.3); background: rgba(255,255,255,.13); color: #fff; text-transform: uppercase; font-size: 11px; font-weight: 800; }
+.deck-card h3 { margin: 17px 8px 5px; font-size: 18px; }
+.deck-card p { margin: 0 8px 16px; color: #747184; font-style: italic; }
+.deck-card__tags { display: flex; flex-wrap: wrap; gap: 7px; padding: 0 8px 8px; }
+.deck-card__tags span { padding: 6px 11px; border-radius: 999px; background: #eef0ff; color: #4a4567; text-transform: uppercase; font-size: 10px; font-weight: 800; }
+.deck-card__tags span:first-child { background: #dcfce7; color: #15803d; }

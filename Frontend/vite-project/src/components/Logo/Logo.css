@@ -1,0 +1,6 @@
+.brand { display: inline-flex; align-items: center; gap: 10px; color: #3023c7; }
+.brand__mark { width: 36px; height: 36px; display: grid; place-items: center; color: #fff; border-radius: 10px; background: linear-gradient(135deg, #4338ca, #8b5cf6); box-shadow: 0 8px 18px rgba(67, 56, 202, .24); }
+.brand__copy { display: grid; line-height: 1.05; }
+.brand__copy strong { font-size: 24px; letter-spacing: -0.03em; }
+.brand__copy small { margin-top: 5px; color: #737084; font-size: 10px; text-transform: uppercase; letter-spacing: .13em; font-weight: 700; }
+.brand--compact .brand__mark { width: 30px; height: 30px; border-radius: 8px; }
