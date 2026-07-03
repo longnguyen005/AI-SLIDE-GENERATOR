@@ -5,8 +5,11 @@ export const env = {
     mongoUri: process.env.MONGODB_URI || 'mongodb://localhost:27017/deckai',
     jwtSecret: process.env.JWT_SECRET || 'dev-secret-change-me',
     corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173',
-    geminiApiKey: process.env.GEMINI_API_KEY || '',
-    geminiModels: (process.env.GEMINI_MODELS || 'gemini-2.5-flash,gemini-2.5-pro,gemini-2.0-flash')
+    geminiApiKeys: (process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || '')
+        .split(',')
+        .map((k) => k.trim())
+        .filter(Boolean),
+    geminiModels: (process.env.GEMINI_MODELS || 'gemini-2.0-flash,gemini-2.0-flash-lite,gemini-2.5-flash-lite')
         .split(',')
         .map((m) => m.trim())
         .filter(Boolean),

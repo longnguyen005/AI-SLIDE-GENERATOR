@@ -2,70 +2,112 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { env } from '../config/env.js';
 import { makeId } from '../utils/ids.js';
 
-/* ── Model pool with fallback ─────────────────────────────── */
+/* ── Model pool: every (key × model) combination ────────── */
 
-const genAI = env.geminiApiKey ? new GoogleGenerativeAI(env.geminiApiKey) : null;
+const pool = [];
+for (const apiKey of env.geminiApiKeys) {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    for (const modelName of env.geminiModels) {
+        pool.push({
+            label: `${modelName} (key …${apiKey.slice(-4)})`,
+            instance: genAI.getGenerativeModel({ model: modelName })
+        });
+    }
+}
 
-const models = genAI
-    ? env.geminiModels.map((name) => ({
-          name,
-          instance: genAI.getGenerativeModel({ model: name })
-      }))
-    : [];
+if (pool.length) {
+    console.info(`[Gemini] Initialized ${pool.length} model slots: ${pool.map((p) => p.label).join(', ')}`);
+} else {
+    console.warn('[Gemini] No API keys configured — AI features will use stub responses.');
+}
+
+/* ── Helpers ──────────────────────────────────────────────── */
 
 function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function isRetryableError(err) {
+    const status = Number(err?.status || err?.httpStatusCode || err?.code || 0);
+    const msg = (err?.message || '').toLowerCase();
+    return (
+        [429, 503, 500].includes(status) ||
+        msg.includes('overloaded') ||
+        msg.includes('rate limit') ||
+        msg.includes('resource exhausted') ||
+        msg.includes('too many requests') ||
+        msg.includes('service unavailable')
+    );
+}
+
+function friendlyError(err) {
+    const msg = (err?.message || '').toLowerCase();
+    if (msg.includes('429') || msg.includes('rate limit') || msg.includes('resource exhausted') || msg.includes('too many requests') || msg.includes('quota')) {
+        return 'AI service is currently overloaded. Please wait a moment and try again.';
+    }
+    if (msg.includes('503') || msg.includes('overloaded') || msg.includes('service unavailable')) {
+        return 'AI service is temporarily unavailable. Please try again in a few seconds.';
+    }
+    if (msg.includes('500')) {
+        return 'AI service encountered an internal error. Please try again.';
+    }
+    return err?.message || 'An unexpected AI error occurred. Please try again.';
+}
+
 /**
- * Try each model in order. If a model fails with a retryable error
- * (429 / 503 / 500 / overloaded), wait briefly then try the next one.
- * Non-retryable errors are thrown immediately.
+ * Attempt the prompt across every (key × model) slot with retries.
+ * - Each slot gets up to 2 attempts with exponential backoff.
+ * - If a slot fails with a retryable error, move to the next slot.
+ * - Non-retryable errors are thrown immediately with a friendly message.
  */
+const MAX_RETRIES_PER_SLOT = 2;
+const BASE_DELAY_MS = 1500;
+
 async function callWithFallback(prompt) {
-    if (models.length === 0) return null; // no API key → caller uses stub
+    if (pool.length === 0) return null;
 
     let lastError;
 
-    for (let i = 0; i < models.length; i++) {
-        const { name, instance } = models[i];
-        try {
-            const result = await instance.generateContent(prompt);
-            if (i > 0) {
-                console.info(`[Gemini] ✓ Succeeded with fallback model: ${name}`);
+    for (let i = 0; i < pool.length; i++) {
+        const { label, instance } = pool[i];
+
+        for (let attempt = 0; attempt < MAX_RETRIES_PER_SLOT; attempt++) {
+            try {
+                if (attempt > 0 || i > 0) {
+                    const delay = BASE_DELAY_MS * Math.pow(2, attempt);
+                    await sleep(delay);
+                }
+
+                const result = await instance.generateContent(prompt);
+
+                if (i > 0 || attempt > 0) {
+                    console.info(`[Gemini] ✓ Succeeded with ${label} (attempt ${attempt + 1})`);
+                }
+                return result;
+            } catch (err) {
+                if (!isRetryableError(err)) {
+                    const error = new Error(friendlyError(err));
+                    error.statusCode = err?.status || err?.httpStatusCode || 500;
+                    throw error;
+                }
+
+                console.warn(
+                    `[Gemini] ✗ ${label} attempt ${attempt + 1} failed: ${(err.message || '').slice(0, 100)}`
+                );
+                lastError = err;
             }
-            return result;
-        } catch (err) {
-            const status = err?.status || err?.httpStatusCode || err?.code;
-            const msg = err?.message || '';
-            const isRetryable =
-                [429, 503, 500].includes(Number(status)) ||
-                msg.toLowerCase().includes('overloaded') ||
-                msg.toLowerCase().includes('rate limit') ||
-                msg.toLowerCase().includes('resource exhausted') ||
-                msg.toLowerCase().includes('too many requests') ||
-                msg.toLowerCase().includes('service unavailable');
+        }
 
-            if (!isRetryable) throw err;
-
-            console.warn(
-                `[Gemini] ✗ Model "${name}" failed (${status || msg.slice(0, 80)}). ` +
-                    (i < models.length - 1
-                        ? `Trying next model "${models[i + 1].name}"...`
-                        : 'No more fallback models.')
-            );
-            lastError = err;
-
-            // Brief pause before trying next model
-            if (i < models.length - 1) await sleep(1000);
+        if (i < pool.length - 1) {
+            console.warn(`[Gemini] Switching to next slot: ${pool[i + 1].label}`);
         }
     }
 
-    // All models exhausted
-    throw lastError;
+    // All slots and retries exhausted — throw friendly error
+    const error = new Error(friendlyError(lastError));
+    error.statusCode = 429;
+    throw error;
 }
-
-/* ── Helpers ──────────────────────────────────────────────── */
 
 function parseJson(text) {
     const trimmed = text.replace(/```json|```/g, '').trim();
@@ -95,7 +137,6 @@ Requirements:
 `);
 
     if (!result) {
-        // Stub fallback when no API key is configured
         return {
             title: input.topic,
             sections: Array.from({ length: input.slideCount }, (_, index) => ({
@@ -146,7 +187,6 @@ Slide quality requirements:
 `);
 
     if (!result) {
-        // Stub fallback when no API key is configured
         return outline.map((section, index) => ({
             slideNumber: index + 1,
             title: section.title,
@@ -169,7 +209,6 @@ export async function regenerateSlide(input) {
     );
 
     if (!result) {
-        // Stub fallback when no API key is configured
         return {
             ...input.currentSlide,
             title: input.currentSlide.title,
