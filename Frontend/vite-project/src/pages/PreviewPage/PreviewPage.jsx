@@ -66,13 +66,9 @@ export default function PreviewPage() {
 
   const regenerate = async (instruction) => {
     if (!activeSlide?._id) return;
-    try {
-      const result = await api.regenerateSlide(activeSlide._id, instruction);
-      setSlides((current) => current.map((slide) => (slide._id === result.slide._id ? result.slide : slide)));
-      setMessage('Slide regenerated.');
-    } catch (error) {
-      setMessage(error.message);
-    }
+    const result = await api.regenerateSlide(activeSlide._id, instruction);
+    setSlides((current) => current.map((slide) => (slide._id === result.slide._id ? result.slide : slide)));
+    setMessage('Slide regenerated successfully!');
   };
 
   const exportPptx = async () => {

@@ -109,6 +109,21 @@
   font-weight: 700;
   cursor: pointer;
 }
+.regenerate-modal__error {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.regenerate-modal__presets button:disabled,
+.regenerate-modal textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 @media (max-width: 520px) {
   .regenerate-modal__footer {
     flex-direction: column-reverse;
