@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import LandingPage from './pages/LandingPage/LandingPage';
 import LoginPage from './pages/AuthPage/LoginPage';
@@ -15,6 +15,11 @@ function RequireAuth({ children }) {
 }
 
 export default function App() {
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('deckai_theme');
+    document.documentElement.dataset.theme = savedTheme === 'dark' ? 'dark' : 'light';
+  }, []);
+
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />

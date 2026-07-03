@@ -25,4 +25,79 @@
 .password-strength { height: 4px; border-radius: 999px; background: #e6e5ec; overflow: hidden; }
 .password-strength span { display: block; height: 100%; background: #10b981; transition: width .2s ease; }
 .password-hint { color: #343141; margin-top: -6px; }
+
+:root[data-theme="dark"] .auth-page {
+  background: #0f1220;
+  color: #eef2ff;
+}
+
+:root[data-theme="dark"] .auth-panel {
+  background:
+    radial-gradient(circle at 78% 18%, rgba(124, 58, 237, 0.12), transparent 28%),
+    linear-gradient(180deg, #151729 0%, #0f1220 100%);
+}
+
+:root[data-theme="dark"] .auth-form h1,
+:root[data-theme="dark"] .auth-form label,
+:root[data-theme="dark"] .auth-form__switch,
+:root[data-theme="dark"] .auth-terms,
+:root[data-theme="dark"] .password-hint {
+  color: #f8faff;
+}
+
+:root[data-theme="dark"] .auth-form > p:first-of-type,
+:root[data-theme="dark"] .auth-panel__footer {
+  color: #cbd3ee;
+}
+
+:root[data-theme="dark"] .auth-form input {
+  background: #1b1d31;
+  border-color: #3a3f5d;
+  color: #f8faff;
+}
+
+:root[data-theme="dark"] .auth-form input:focus {
+  border-color: #8b7cff;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.26);
+}
+
+:root[data-theme="dark"] .auth-form input::placeholder {
+  color: #8f98b8;
+}
+
+:root[data-theme="dark"] .password-field button {
+  color: #cbd3ee;
+}
+
+:root[data-theme="dark"] .auth-label-row a,
+:root[data-theme="dark"] .auth-form__switch a,
+:root[data-theme="dark"] .auth-terms a {
+  color: #a99bff;
+}
+
+:root[data-theme="dark"] .auth-divider::before {
+  background: #343852;
+}
+
+:root[data-theme="dark"] .auth-divider span {
+  background: #121526;
+  color: #a5acc7;
+}
+
+:root[data-theme="dark"] .auth-notice {
+  background: #20264a;
+  border-color: #4650a3;
+  color: #dbe2ff;
+}
+
+:root[data-theme="dark"] .password-strength {
+  background: #2a2e45;
+}
+
+:root[data-theme="dark"] .auth-panel .btn--outline {
+  background: #252849;
+  border-color: #414767;
+  color: #eef2ff;
+}
+
 @media (max-width: 840px) { .auth-page { grid-template-columns: 1fr; } .auth-panel { min-height: 700px; padding: 90px 24px 70px; } .auth-back { display: none; } .auth-form__back { display: inline-flex; } .auth-panel__footer { position: static; margin-top: 40px; } }

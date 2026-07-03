@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Logo from '../../components/Logo/Logo';
 import Button from '../../components/Button/Button';
 import FeatureCard from '../../components/FeatureCard/FeatureCard';
@@ -15,6 +15,15 @@ const features = [
 ];
 
 export default function LandingPage() {
+  const [theme, setTheme] = useState(() => localStorage.getItem('deckai_theme') === 'dark' ? 'dark' : 'light');
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem('deckai_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme((value) => value === 'dark' ? 'light' : 'dark');
+
   return (
     <div className="landing-page">
       <header className="landing-nav">
@@ -26,6 +35,10 @@ export default function LandingPage() {
           <a href="#about">About</a>
         </nav>
         <div className="landing-nav__actions">
+          <button type="button" className="landing-theme-toggle" onClick={toggleTheme} aria-label="Toggle color theme">
+            <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
+            <span>{theme === 'dark' ? 'Light' : 'Dark'}</span>
+          </button>
           <Button to="/login" variant="ghost">Login</Button>
           <Button to="/register">Get Started</Button>
         </div>
