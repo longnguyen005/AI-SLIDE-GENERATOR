@@ -3,6 +3,18 @@ import { Link } from 'react-router-dom';
 import Icon from '../Icon/Icon';
 import './DeskCard.css';
 
+function deckHref(deckId, status) {
+  switch (status) {
+    case 'ready':
+      return `/preview/${deckId}`;
+    case 'outline_ready':
+      return `/outline/${deckId}`;
+    default:
+      // draft or any other status → go to outline (will generate if needed)
+      return `/outline/${deckId}`;
+  }
+}
+
 export default function DeckCard({ deck, selected = false }) {
   const deckId = deck._id || deck.id;
   const title = deck.title || deck.topic || 'Untitled deck';
@@ -11,7 +23,7 @@ export default function DeckCard({ deck, selected = false }) {
   const status = deck.status ? deck.status.replace(/_/g, ' ') : 'draft';
 
   return (
-    <Link to={`/preview/${deckId}`} className={`deck-card ${selected ? 'deck-card--selected' : ''}`}>
+    <Link to={deckHref(deckId, deck.status)} className={`deck-card ${selected ? 'deck-card--selected' : ''}`}>
       {selected && <span className="deck-card__check"><Icon name="check" size={16} /></span>}
       <div className="deck-card__cover deck-card__cover--blue">
         <span className="deck-card__cover-icon"><Icon name="sparkles" size={52} /></span>

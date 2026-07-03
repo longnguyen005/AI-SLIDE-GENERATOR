@@ -1,26 +1,81 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { env } from '../config/env.js';
 import { makeId } from '../utils/ids.js';
-const model = env.geminiApiKey
-    ? new GoogleGenerativeAI(env.geminiApiKey).getGenerativeModel({ model: 'gemini-2.5-flash' })
-    : null;
+
+/* ── Model pool with fallback ─────────────────────────────── */
+
+const genAI = env.geminiApiKey ? new GoogleGenerativeAI(env.geminiApiKey) : null;
+
+const models = genAI
+    ? env.geminiModels.map((name) => ({
+          name,
+          instance: genAI.getGenerativeModel({ model: name })
+      }))
+    : [];
+
+function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Try each model in order. If a model fails with a retryable error
+ * (429 / 503 / 500 / overloaded), wait briefly then try the next one.
+ * Non-retryable errors are thrown immediately.
+ */
+async function callWithFallback(prompt) {
+    if (models.length === 0) return null; // no API key → caller uses stub
+
+    let lastError;
+
+    for (let i = 0; i < models.length; i++) {
+        const { name, instance } = models[i];
+        try {
+            const result = await instance.generateContent(prompt);
+            if (i > 0) {
+                console.info(`[Gemini] ✓ Succeeded with fallback model: ${name}`);
+            }
+            return result;
+        } catch (err) {
+            const status = err?.status || err?.httpStatusCode || err?.code;
+            const msg = err?.message || '';
+            const isRetryable =
+                [429, 503, 500].includes(Number(status)) ||
+                msg.toLowerCase().includes('overloaded') ||
+                msg.toLowerCase().includes('rate limit') ||
+                msg.toLowerCase().includes('resource exhausted') ||
+                msg.toLowerCase().includes('too many requests') ||
+                msg.toLowerCase().includes('service unavailable');
+
+            if (!isRetryable) throw err;
+
+            console.warn(
+                `[Gemini] ✗ Model "${name}" failed (${status || msg.slice(0, 80)}). ` +
+                    (i < models.length - 1
+                        ? `Trying next model "${models[i + 1].name}"...`
+                        : 'No more fallback models.')
+            );
+            lastError = err;
+
+            // Brief pause before trying next model
+            if (i < models.length - 1) await sleep(1000);
+        }
+    }
+
+    // All models exhausted
+    throw lastError;
+}
+
+/* ── Helpers ──────────────────────────────────────────────── */
+
 function parseJson(text) {
     const trimmed = text.replace(/```json|```/g, '').trim();
     return JSON.parse(trimmed);
 }
+
+/* ── Public API ───────────────────────────────────────────── */
+
 export async function generateOutline(input) {
-    if (!model) {
-        return {
-            title: input.topic,
-            sections: Array.from({ length: input.slideCount }, (_, index) => ({
-                id: makeId(),
-                title: index === 0 ? `Why ${input.topic} matters now` : `${input.topic} - Strategic point ${index + 1}`,
-                summary: `Frame one specific ${input.tone} insight, include supporting context, and end with a presenter-ready takeaway.`,
-                order: index + 1
-            }))
-        };
-    }
-    const result = await model.generateContent(`
+    const result = await callWithFallback(`
 Return strict JSON only. Do not wrap in markdown.
 Shape:
 {"title":"string","sections":[{"title":"string","summary":"string"}]}
@@ -38,6 +93,20 @@ Requirements:
 - Avoid vague filler such as "discuss the topic" or "cover key points".
 - Make the outline presentation-ready for a polished SaaS/business deck.
 `);
+
+    if (!result) {
+        // Stub fallback when no API key is configured
+        return {
+            title: input.topic,
+            sections: Array.from({ length: input.slideCount }, (_, index) => ({
+                id: makeId(),
+                title: index === 0 ? `Why ${input.topic} matters now` : `${input.topic} - Strategic point ${index + 1}`,
+                summary: `Frame one specific ${input.tone} insight, include supporting context, and end with a presenter-ready takeaway.`,
+                order: index + 1
+            }))
+        };
+    }
+
     const parsed = parseJson(result.response.text());
     return {
         title: String(parsed.title || input.topic),
@@ -49,21 +118,9 @@ Requirements:
         }))
     };
 }
+
 export async function generateSlides(deck, outline) {
-    if (!model) {
-        return outline.map((section, index) => ({
-            slideNumber: index + 1,
-            title: section.title,
-            content: [
-                section.summary || `Frame the core insight behind ${section.title}.`,
-                `Add one concrete example, implication, or metric relevant to ${deck.topic}.`,
-                'End with a clear audience takeaway or next action.'
-            ],
-            speakerNotes: `Present the insight, explain why it matters for ${deck.topic}, then connect it to the next slide.`,
-            layout: index === 0 ? 'title' : index === outline.length - 1 ? 'summary' : 'content'
-        }));
-    }
-    const result = await model.generateContent(`
+    const result = await callWithFallback(`
 Return strict JSON only. Do not wrap in markdown.
 Shape:
 {"slides":[{"title":"string","content":["string"],"speakerNotes":"string","layout":"title|content|two_column|section|summary"}]}
@@ -87,10 +144,32 @@ Slide quality requirements:
 - Write bullets so they can pair with a visual metaphor, light data panel, or icon-based illustration on the slide.
 - When useful, include one bullet that suggests a concrete visual angle such as trend, contrast, timeline, system map, or impact signal, but keep it audience-facing.
 `);
+
+    if (!result) {
+        // Stub fallback when no API key is configured
+        return outline.map((section, index) => ({
+            slideNumber: index + 1,
+            title: section.title,
+            content: [
+                section.summary || `Frame the core insight behind ${section.title}.`,
+                `Add one concrete example, implication, or metric relevant to ${deck.topic}.`,
+                'End with a clear audience takeaway or next action.'
+            ],
+            speakerNotes: `Present the insight, explain why it matters for ${deck.topic}, then connect it to the next slide.`,
+            layout: index === 0 ? 'title' : index === outline.length - 1 ? 'summary' : 'content'
+        }));
+    }
+
     return parseJson(result.response.text()).slides;
 }
+
 export async function regenerateSlide(input) {
-    if (!model) {
+    const result = await callWithFallback(
+        `Return strict JSON only with shape {"title":"string","content":["string"],"speakerNotes":"string","layout":"content"}. Regenerate one English slide for deck topic "${input.topic}", tone "${input.tone}". Current slide: ${JSON.stringify(input.currentSlide)}. Previous title: ${input.previousTitle || ''}. Next title: ${input.nextTitle || ''}. Instruction: ${input.instruction || 'Improve clarity'}.`
+    );
+
+    if (!result) {
+        // Stub fallback when no API key is configured
         return {
             ...input.currentSlide,
             title: input.currentSlide.title,
@@ -98,6 +177,6 @@ export async function regenerateSlide(input) {
             speakerNotes: `${input.currentSlide.speakerNotes || ''}\nRegenerated with instruction: ${input.instruction || 'Polish the slide.'}`.trim()
         };
     }
-    const result = await model.generateContent(`Return strict JSON only with shape {"title":"string","content":["string"],"speakerNotes":"string","layout":"content"}. Regenerate one English slide for deck topic "${input.topic}", tone "${input.tone}". Current slide: ${JSON.stringify(input.currentSlide)}. Previous title: ${input.previousTitle || ''}. Next title: ${input.nextTitle || ''}. Instruction: ${input.instruction || 'Improve clarity'}.`);
+
     return parseJson(result.response.text());
 }
