@@ -6,6 +6,7 @@ import authRoutes from './routes/auth.routes.js';
 import deckRoutes from './routes/deck.routes.js';
 import slideRoutes from './routes/slide.routes.js';
 export const app = express();
+app.set("trust proxy", 1);
 app.use(cors({ origin: env.corsOrigin, credentials: true, exposedHeaders: ['Content-Disposition'] }));
 app.use(express.json({ limit: '1mb' }));
 app.get('/api/health', (_req, res) => {
