@@ -15,9 +15,13 @@ export async function listDecks(req, res) {
     res.json({ decks });
 }
 export async function summary(req, res) {
-    const totalDecks = await Deck.countDocuments({ userId: req.user?.id });
-    const recentDecks = await Deck.find({ userId: req.user?.id }).sort({ updatedAt: -1 }).limit(5);
-    res.json({ totalDecks, recentDecks });
+    const userId = req.user?.id;
+    const [totalDecks, totalExports, recentDecks] = await Promise.all([
+        Deck.countDocuments({ userId }),
+        ExportHistory.countDocuments({ userId }),
+        Deck.find({ userId }).sort({ updatedAt: -1 }).limit(5)
+    ]);
+    res.json({ totalDecks, totalExports, recentDecks });
 }
 export async function getDeck(req, res) {
     const deck = await getOwnedDeck(routeParam(req.params.deckId, 'deckId'), req.user.id);

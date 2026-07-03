@@ -90,6 +90,8 @@ export const api = {
 
   getDecks: () => request('/decks'),
 
+  getSummary: () => request('/decks/stats/summary'),
+
   getDeck: (deckId) => request(`/decks/${deckId}`),
 
   createDeck: (data) =>

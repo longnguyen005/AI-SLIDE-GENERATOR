@@ -10,16 +10,23 @@ import './DashboardPage.css';
 
 export default function DashboardPage() {
   const [decks, setDecks] = useState([]);
+  const [exportCount, setExportCount] = useState(0);
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
 
-    async function loadDecks() {
+    async function loadData() {
       try {
-        const result = await api.getDecks();
-        if (active) setDecks(result.decks || []);
+        const [decksResult, summaryResult] = await Promise.all([
+          api.getDecks(),
+          api.getSummary().catch(() => ({ totalExports: 0 }))
+        ]);
+        if (active) {
+          setDecks(decksResult.decks || []);
+          setExportCount(summaryResult.totalExports || 0);
+        }
       } catch (error) {
         if (active) setNotice(error.message);
       } finally {
@@ -27,7 +34,7 @@ export default function DashboardPage() {
       }
     }
 
-    loadDecks();
+    loadData();
     return () => {
       active = false;
     };
@@ -53,7 +60,7 @@ export default function DashboardPage() {
           <StatCard icon="dashboard" label="Total decks" value={decks.length} />
           <StatCard icon="check" label="Ready decks" value={readyCount} />
           <StatCard icon="layers" label="Planned slides" value={plannedSlides} tone="blue" />
-          <StatCard icon="download" label="Exports" value="0" />
+          <StatCard icon="download" label="Exports" value={exportCount} />
         </section>
 
         <section className="dashboard-section">
