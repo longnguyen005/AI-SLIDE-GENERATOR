@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Sidebar from '../../components/SideBar/SideBar';
 import Icon from '../../components/Icon/Icon';
 import Button from '../../components/Button/Button';
 import RegenerateModal from '../../components/RegenerateModal/RegenerateModal';
+import { api } from '../../service/apiClient';
 import './EditorPage.css';
 
 const thumbnails = [
@@ -12,10 +13,37 @@ const thumbnails = [
   { title: 'Our Team', type: 'people' },
 ];
 
+function initials(name = '') {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return 'U';
+  return parts.slice(0, 2).map((part) => part[0]).join('').toUpperCase();
+}
+
 export default function EditorPage() {
   const [selected, setSelected] = useState(1);
   const [modalOpen, setModalOpen] = useState(true);
   const [toast, setToast] = useState('');
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadUser() {
+      try {
+        const result = await api.me();
+        if (active) setUser(result.user);
+      } catch {
+        if (active) setUser(null);
+      }
+    }
+
+    loadUser();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const avatar = useMemo(() => initials(user?.fullName || user?.email || ''), [user]);
 
   return (
     <div className="editor-page">
@@ -26,7 +54,7 @@ export default function EditorPage() {
           <div className="editor-search"><Icon name="search" size={18} /><input placeholder="Search in project..." /></div>
           <Button variant="outline">Export</Button>
           <Button icon="save">Save</Button>
-          <span className="editor-avatar">AR</span>
+          <span className="editor-avatar">{avatar}</span>
         </header>
 
         <section className="editor-grid">

@@ -1,5 +1,8 @@
 .preview-main { background: #f3f4ff; }
 .preview-message { margin: 16px 0; padding: 12px 14px; border: 1px solid #cfd3ff; border-radius: 10px; color: #3329c7; background: #eef0ff; }
+.preview-empty { min-height: 360px; display: grid; place-items: center; align-content: center; gap: 12px; margin-top: 30px; padding: 24px; border: 1px solid #d7d5e8; border-radius: 18px; color: #625f73; background: #fff; text-align: center; }
+.preview-empty strong { color: #171525; font-size: 24px; }
+.preview-empty p { margin: 0; }
 .preview-main > .slide-canvas { margin-top: 30px; }
 .preview-controls { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 16px; margin: 20px 8px 22px; }
 .preview-controls > div { display: flex; align-items: center; gap: 12px; }

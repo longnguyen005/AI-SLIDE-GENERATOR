@@ -8,7 +8,9 @@ function publicUser(user) {
         id: user._id.toString(),
         fullName: user.fullName,
         email: user.email,
-        avatar: user.avatar || ''
+        avatar: user.avatar || '',
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
     };
 }
 function sign(user) {

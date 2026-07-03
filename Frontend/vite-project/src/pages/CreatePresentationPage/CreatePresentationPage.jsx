@@ -1,37 +1,91 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Sidebar from '../../components/SideBar/SideBar';
 import Icon from '../../components/Icon/Icon';
 import Button from '../../components/Button/Button';
+import Topbar from '../../components/Topbar/Topbar';
+import { api } from '../../service/apiClient';
 import './CreatePresentationPage.css';
 
 export default function CreatePresentationPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const deckId = searchParams.get('deckId');
   const [topic, setTopic] = useState('');
   const [description, setDescription] = useState('');
   const [tone, setTone] = useState('Professional');
   const [slideCount, setSlideCount] = useState(6);
+  const [notice, setNotice] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [loadingDraft, setLoadingDraft] = useState(() => Boolean(deckId));
 
-  const submit = (event) => {
+  useEffect(() => {
+    if (!deckId) return;
+
+    let active = true;
+
+    async function loadDraft() {
+      try {
+        const result = await api.getDeck(deckId);
+        const deck = result.deck;
+        if (!active) return;
+        setTopic(deck.topic || '');
+        setDescription(deck.description || '');
+        setTone(deck.tone ? deck.tone[0].toUpperCase() + deck.tone.slice(1) : 'Professional');
+        setSlideCount(Number(deck.slideCount) || 6);
+      } catch (error) {
+        if (active) setNotice(error.message);
+      } finally {
+        if (active) setLoadingDraft(false);
+      }
+    }
+
+    loadDraft();
+    return () => {
+      active = false;
+    };
+  }, [deckId]);
+
+  const submit = async (event) => {
     event.preventDefault();
-    navigate('/outline');
+    setNotice('');
+    setLoading(true);
+    try {
+      const payload = {
+        topic,
+        description,
+        language: 'English',
+        tone: tone.toLowerCase(),
+        slideCount
+      };
+      const result = deckId ? await api.updateDeck(deckId, payload) : await api.createDeck(payload);
+      const nextDeckId = result.deck._id;
+      await api.generateOutline(nextDeckId);
+      navigate(`/outline/${nextDeckId}`);
+    } catch (error) {
+      setNotice(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="page-shell create-page">
-      <Sidebar active="create" variant="tool" />
+      <Sidebar active="create" />
       <main className="create-main">
-        <header className="create-topbar">
-          <span>/</span>
-          <strong>New Deck</strong>
-          <div><button><Icon name="bell" /></button><button><Icon name="help" /></button><span className="create-avatar">AR</span></div>
-        </header>
+        <Topbar
+          title={deckId ? 'Edit Draft' : 'New Deck'}
+          subtitle={deckId ? 'Update your saved topic before generating slides' : 'Create a structured AI presentation from your topic'}
+          showSearch={false}
+        />
+
+        {notice && <div className="create-message">{notice}</div>}
 
         <form className="create-card" onSubmit={submit}>
           <div className="create-card__hero">
             <span><Icon name="sparkles" size={26} /></span>
-            <h1>Create new presentation</h1>
-            <p>Tell us about your topic and we'll generate a structured outline using AI.</p>
+            <h1>{deckId ? 'Edit presentation draft' : 'Create new presentation'}</h1>
+            <p>{deckId ? 'Your draft is saved. Update the topic details, then regenerate the outline when ready.' : "Tell us about your topic and we'll generate a structured outline using AI."}</p>
           </div>
 
           <div className="form-group">
@@ -49,7 +103,7 @@ export default function CreatePresentationPage() {
             <div className="form-group">
               <label htmlFor="tone">Tone</label>
               <select id="tone" value={tone} onChange={(event) => setTone(event.target.value)}>
-                <option>Professional</option><option>Academic</option><option>Creative</option><option>Persuasive</option>
+                <option>Professional</option><option>Academic</option><option>Simple</option><option>Persuasive</option>
               </select>
             </div>
             <div className="form-group">
@@ -71,8 +125,8 @@ export default function CreatePresentationPage() {
           <div className="ai-info"><Icon name="sparkles" /><p><strong>Powered by Gemini AI.</strong> AI will create a structured outline based on your topic. You can review and edit it before generating slides.</p></div>
 
           <footer className="create-card__footer">
-            <Button type="button" variant="outline" onClick={() => navigate('/dashboard')}>Cancel</Button>
-            <Button type="submit" icon="sparkles">Generate Outline</Button>
+            <Button type="button" variant="outline" onClick={() => (deckId ? navigate(`/outline/${deckId}`) : navigate('/dashboard'))}>Cancel</Button>
+            <Button type="submit" icon="sparkles" disabled={loading || loadingDraft}>{loading ? 'Saving...' : deckId ? 'Update Outline' : 'Generate Outline'}</Button>
           </footer>
         </form>
         <p className="create-trust">Trusted by 10k+ researchers and creators</p>

@@ -1,6 +1,7 @@
 import { getOwnedDeck } from './deck.controller.js';
 import { Slide } from '../models/Slide.model.js';
 import { generateOutline, generateSlides } from '../services/gemini.service.js';
+import { ApiError } from '../utils/ApiError.js';
 import { makeId } from '../utils/ids.js';
 import { routeParam } from '../utils/params.js';
 export async function generateDeckOutline(req, res) {
@@ -39,6 +40,9 @@ export async function updateOutline(req, res) {
 }
 export async function generateDeckSlides(req, res) {
     const deck = await getOwnedDeck(routeParam(req.params.deckId, 'deckId'), req.user.id);
+    const existingSlideCount = await Slide.countDocuments({ deckId: deck._id });
+    if (existingSlideCount > 0)
+        throw new ApiError(409, 'Deck already has slides. Use regenerate slide instead.');
     const sections = [...(deck.outline?.sections || [])]
         .sort((a, b) => a.order - b.order)
         .map((section) => ({
@@ -53,7 +57,6 @@ export async function generateDeckSlides(req, res) {
         tone: deck.tone,
         slideCount: deck.slideCount
     }, sections);
-    await Slide.deleteMany({ deckId: deck._id });
     const slides = await Slide.insertMany(generated.slice(0, 10).map((slide, index) => ({
         deckId: deck._id,
         slideNumber: index + 1,

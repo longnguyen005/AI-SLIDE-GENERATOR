@@ -39,7 +39,7 @@ export default function LandingPage() {
           <p className="landing-hero__copy">Transform your ideas into professional pitch decks in seconds. Academic rigor meets creative flow, powered by next-gen AI.</p>
           <div className="landing-hero__actions">
             <Button to="/register" iconRight="arrowRight">Get Started Free</Button>
-            <Button to="/preview" variant="outline">See How It Works</Button>
+            <Button to="/register" variant="outline">See How It Works</Button>
           </div>
           <div className="monitor-demo" aria-label="Mô phỏng giao diện DeckAI">
             <div className="monitor-demo__screen">

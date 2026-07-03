@@ -18,6 +18,18 @@
   --shadow: 0 14px 35px rgba(74, 58, 180, 0.12);
 }
 
+:root[data-theme="dark"] {
+  color: #eef2ff;
+  background: #0f1220;
+  --sidebar: #17182a;
+  --surface: #1b1d31;
+  --surface-alt: #151729;
+  --text: #eef2ff;
+  --muted: #a5acc7;
+  --border: #343852;
+  --shadow: 0 16px 35px rgba(0, 0, 0, 0.34);
+}
+
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { margin: 0; min-width: 320px; min-height: 100vh; background: #f7f7ff; }
@@ -26,6 +38,346 @@ button, a { -webkit-tap-highlight-color: transparent; }
 a { color: inherit; text-decoration: none; }
 img { max-width: 100%; display: block; }
 #root { min-height: 100vh; }
+
+.sidebar-popup-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 1000;
+  display: grid !important;
+  place-items: center;
+  padding: 24px;
+  background: rgba(15, 18, 32, 0.5);
+  backdrop-filter: blur(8px);
+}
+
+.sidebar-popup {
+  width: min(460px, calc(100vw - 40px));
+  max-height: min(680px, calc(100vh - 48px));
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 32px 100px rgba(25, 22, 60, 0.36);
+}
+
+.sidebar-popup__header {
+  min-height: 78px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-alt);
+}
+
+.sidebar-popup__header > div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.sidebar-popup__header strong {
+  font-size: 20px;
+}
+
+.sidebar-popup__header small {
+  color: var(--muted);
+}
+
+.sidebar-popup__header button {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 12px;
+  background: var(--primary-soft);
+  color: #38344f;
+  cursor: pointer;
+}
+
+.sidebar-popup__body {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+}
+
+.account-summary {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-alt);
+}
+
+.account-summary div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.account-summary small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+}
+
+.account-details {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.account-details div {
+  display: grid;
+  gap: 4px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.account-details div:last-child {
+  border-bottom: 0;
+}
+
+.account-details dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.account-details dd {
+  margin: 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+:root[data-theme="dark"] body { background: #0f1220; color: #eef2ff; }
+:root[data-theme="dark"] .sidebar { background: linear-gradient(180deg, #17182a 0%, #111425 100%); border-right-color: #2d3148; }
+:root[data-theme="dark"] .workspace-box,
+:root[data-theme="dark"] .sidebar-panel,
+:root[data-theme="dark"] .sidebar-popup,
+:root[data-theme="dark"] .account-summary,
+:root[data-theme="dark"] .dashboard-empty,
+:root[data-theme="dark"] .new-deck-card,
+:root[data-theme="dark"] .stat-card,
+:root[data-theme="dark"] .create-card,
+:root[data-theme="dark"] .topbar__search,
+:root[data-theme="dark"] .slide-canvas,
+:root[data-theme="dark"] .export-card,
+:root[data-theme="dark"] .speaker-notes,
+:root[data-theme="dark"] .preview-empty,
+:root[data-theme="dark"] .outline-status-card {
+  background: #1b1d31;
+  border-color: #343852;
+  color: #eef2ff;
+}
+:root[data-theme="dark"] .dashboard-main,
+:root[data-theme="dark"] .create-main,
+:root[data-theme="dark"] .outline-main,
+:root[data-theme="dark"] .preview-main,
+:root[data-theme="dark"] .create-page {
+  background: #0f1220;
+}
+:root[data-theme="dark"] .sidebar__link,
+:root[data-theme="dark"] .sidebar__utility,
+:root[data-theme="dark"] .workspace-box,
+:root[data-theme="dark"] .topbar__round,
+:root[data-theme="dark"] .sidebar-popup__header button {
+  color: #dbe2ff;
+}
+:root[data-theme="dark"] .sidebar__link:hover,
+:root[data-theme="dark"] .sidebar__profile:hover,
+:root[data-theme="dark"] .sidebar__utility:hover,
+:root[data-theme="dark"] .topbar__round:hover {
+  background: #252849;
+}
+:root[data-theme="dark"] .sidebar__link--active {
+  background: #2e2b61;
+  color: #fff;
+}
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] textarea,
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] .slide-stepper,
+:root[data-theme="dark"] .disabled-field {
+  background: #151729;
+  border-color: #343852;
+  color: #eef2ff;
+}
+:root[data-theme="dark"] small,
+:root[data-theme="dark"] .topbar__title p,
+:root[data-theme="dark"] .brand__copy small,
+:root[data-theme="dark"] .sidebar-panel small,
+:root[data-theme="dark"] .sidebar__profile small,
+:root[data-theme="dark"] .sidebar-popup__header small,
+:root[data-theme="dark"] .account-summary small,
+:root[data-theme="dark"] .account-details dt,
+:root[data-theme="dark"] .outline-status-card small {
+  color: #a5acc7;
+}
+:root[data-theme="dark"] .sidebar-popup__header,
+:root[data-theme="dark"] .account-details div {
+  border-color: #343852;
+}
+:root[data-theme="dark"] .sidebar-popup__header {
+  background: linear-gradient(180deg, #1b1d31 0%, #151729 100%);
+}
+:root[data-theme="dark"] .sidebar-popup__header button {
+  background: #252849;
+}
+:root[data-theme="dark"] .account-details dd {
+  color: #eef2ff;
+}
+
+:root[data-theme="dark"] .topbar__title h1,
+:root[data-theme="dark"] .dashboard-section__heading h2,
+:root[data-theme="dark"] .dashboard-empty strong,
+:root[data-theme="dark"] .new-deck-card strong,
+:root[data-theme="dark"] .stat-card strong,
+:root[data-theme="dark"] .create-card h1,
+:root[data-theme="dark"] .form-group label,
+:root[data-theme="dark"] .outline-header h1,
+:root[data-theme="dark"] .outline-empty strong,
+:root[data-theme="dark"] .outline-card input,
+:root[data-theme="dark"] .outline-card label,
+:root[data-theme="dark"] .outline-sticky strong,
+:root[data-theme="dark"] .preview-empty strong,
+:root[data-theme="dark"] .export-card strong,
+:root[data-theme="dark"] .speaker-notes__header,
+:root[data-theme="dark"] .editor-topbar,
+:root[data-theme="dark"] .editor-slide h2,
+:root[data-theme="dark"] .editor-properties,
+:root[data-theme="dark"] .deck-card h3,
+:root[data-theme="dark"] .presentation-row h3,
+:root[data-theme="dark"] .regenerate-modal h2 {
+  color: #f8faff;
+}
+
+:root[data-theme="dark"] .topbar__title p,
+:root[data-theme="dark"] .create-card__hero p,
+:root[data-theme="dark"] .form-group small,
+:root[data-theme="dark"] .form-group__row span,
+:root[data-theme="dark"] .outline-header p,
+:root[data-theme="dark"] .outline-empty,
+:root[data-theme="dark"] .outline-sticky small,
+:root[data-theme="dark"] .preview-empty,
+:root[data-theme="dark"] .preview-hint,
+:root[data-theme="dark"] .export-card p,
+:root[data-theme="dark"] .speaker-notes__body,
+:root[data-theme="dark"] .deck-card p,
+:root[data-theme="dark"] .deck-card small,
+:root[data-theme="dark"] .presentation-row p,
+:root[data-theme="dark"] .presentation-row__meta,
+:root[data-theme="dark"] .editor-topbar > div:first-child span,
+:root[data-theme="dark"] .editor-thumbs small,
+:root[data-theme="dark"] .editor-properties h2,
+:root[data-theme="dark"] .create-trust {
+  color: #cbd3ee;
+}
+
+:root[data-theme="dark"] .dashboard-empty,
+:root[data-theme="dark"] .new-deck-card,
+:root[data-theme="dark"] .deck-card,
+:root[data-theme="dark"] .presentation-row,
+:root[data-theme="dark"] .outline-card,
+:root[data-theme="dark"] .outline-empty,
+:root[data-theme="dark"] .outline-sticky,
+:root[data-theme="dark"] .speaker-notes__body,
+:root[data-theme="dark"] .export-history article,
+:root[data-theme="dark"] .editor-sidebar,
+:root[data-theme="dark"] .editor-properties,
+:root[data-theme="dark"] .editor-slide,
+:root[data-theme="dark"] .regenerate-modal {
+  background: #1b1d31;
+  border-color: #343852;
+  color: #eef2ff;
+}
+
+:root[data-theme="dark"] .outline-card textarea,
+:root[data-theme="dark"] .regenerate-modal textarea {
+  background: #151729;
+  border-color: #343852;
+  color: #eef2ff;
+}
+
+:root[data-theme="dark"] .outline-card textarea::placeholder,
+:root[data-theme="dark"] input::placeholder,
+:root[data-theme="dark"] textarea::placeholder {
+  color: #8f98b8;
+}
+
+:root[data-theme="dark"] .btn--outline,
+:root[data-theme="dark"] .btn--secondary,
+:root[data-theme="dark"] .presentation-row__actions button:first-child {
+  background: #252849;
+  border-color: #414767;
+  color: #eef2ff;
+}
+
+:root[data-theme="dark"] .btn--ghost,
+:root[data-theme="dark"] .dashboard-section__heading a,
+:root[data-theme="dark"] .outline-sticky > span,
+:root[data-theme="dark"] .sidebar__link--active,
+:root[data-theme="dark"] .brand {
+  color: #dbe2ff;
+}
+
+:root[data-theme="dark"] .btn:disabled {
+  opacity: .72;
+}
+
+:root[data-theme="dark"] .ai-info,
+:root[data-theme="dark"] .preview-message,
+:root[data-theme="dark"] .editor-toast {
+  background: #20264a;
+  border-color: #4650a3;
+  color: #dbe2ff;
+}
+
+:root[data-theme="dark"] .ai-info p,
+:root[data-theme="dark"] .ai-info strong {
+  color: #eef2ff;
+}
+
+:root[data-theme="dark"] .disabled-field svg:last-child,
+:root[data-theme="dark"] .outline-card__drag,
+:root[data-theme="dark"] .regenerate-modal__header button {
+  color: #a5acc7;
+}
+
+:root[data-theme="dark"] .slide-canvas {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(124, 58, 237, .18), transparent 28%),
+    linear-gradient(135deg, #14172a 0%, #181b30 56%, #101828 100%);
+}
+
+:root[data-theme="dark"] .slide-canvas h2,
+:root[data-theme="dark"] .slide-canvas__points li p {
+  color: #eef2ff;
+}
+
+:root[data-theme="dark"] .slide-canvas__points li {
+  background: rgba(27, 29, 49, .78);
+  border-color: #343852;
+}
+
+:root[data-theme="dark"] .slide-canvas__eyebrow {
+  background: #252849;
+  color: #dbe2ff;
+}
+
+:root[data-theme="dark"] .slide-canvas__watermark {
+  color: rgba(219, 226, 255, .56);
+}
 
 .page-shell {
   min-height: 100vh;

@@ -12,7 +12,7 @@ const paths = {
   search: <><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></>,
   bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></>,
   arrowLeft: <><path d="m15 18-6-6 6-6"/></>,
-  arrowRight: <><path d="m9 18 6 6 6-6" transform="rotate(180 12 12)"/></>,
+  arrowRight: <><path d="M5 12h14M13 5l7 7-7 7"/></>,
   sparkles: <><path d="m12 3 1.2 3.8L17 8l-3.8 1.2L12 13l-1.2-3.8L7 8l3.8-1.2L12 3Z"/><path d="m5 14 .8 2.2L8 17l-2.2.8L5 20l-.8-2.2L2 17l2.2-.8L5 14ZM19 13l.7 2.3L22 16l-2.3.7L19 19l-.7-2.3L16 16l2.3-.7L19 13Z"/></>,
   download: <><path d="M12 3v12M8 11l4 4 4-4M4 19h16"/></>,
   trash: <><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></>,

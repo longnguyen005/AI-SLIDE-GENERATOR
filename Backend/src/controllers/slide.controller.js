@@ -5,6 +5,7 @@ import { SlideVersion } from '../models/SlideVersion.model.js';
 import { regenerateSlide as regenerateWithAi } from '../services/gemini.service.js';
 import { ApiError } from '../utils/ApiError.js';
 import { routeParam } from '../utils/params.js';
+
 async function getOwnedSlide(slideId, userId) {
     const slide = await Slide.findById(slideId);
     if (!slide)
@@ -12,9 +13,15 @@ async function getOwnedSlide(slideId, userId) {
     await getOwnedDeck(slide.deckId.toString(), userId);
     return slide;
 }
+
+async function assignSlideNumbers(slideIds) {
+    await Promise.all(slideIds.map((id, index) => Slide.updateOne({ _id: id }, { slideNumber: -(index + 1) })));
+    await Promise.all(slideIds.map((id, index) => Slide.updateOne({ _id: id }, { slideNumber: index + 1 })));
+}
+
 async function renumber(deckId) {
     const slides = await Slide.find({ deckId }).sort({ slideNumber: 1, createdAt: 1 });
-    await Promise.all(slides.map((slide, index) => Slide.updateOne({ _id: slide._id }, { slideNumber: index + 1 })));
+    await assignSlideNumbers(slides.map((slide) => slide._id));
 }
 export async function listSlides(req, res) {
     const deckId = routeParam(req.params.deckId, 'deckId');
@@ -60,7 +67,7 @@ export async function reorderSlides(req, res) {
     const slides = await Slide.find({ deckId, _id: { $in: slideIds } });
     if (slides.length !== slideIds.length)
         throw new ApiError(400, 'All slide IDs must belong to this deck');
-    await Promise.all(slideIds.map((id, index) => Slide.updateOne({ _id: id }, { slideNumber: index + 1 })));
+    await assignSlideNumbers(slideIds);
     const updated = await Slide.find({ deckId }).sort({ slideNumber: 1 });
     res.json({ slides: updated });
 }
