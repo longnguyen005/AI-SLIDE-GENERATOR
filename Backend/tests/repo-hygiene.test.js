@@ -64,8 +64,9 @@ describe('Task 5: Docker Compose, GitHub Actions CI, Repo Hygiene & Documentatio
         const composeYml = fs.readFileSync(resolveRepoPath('docker-compose.yml'), 'utf8');
         expect(composeYml).toContain('mongo:7');
         expect(composeYml).toContain('mongodb://mongo:27017/deckai');
-        expect(composeYml).toMatch(/JWT_SECRET=?\$\{JWT_SECRET:-/);
+        expect(composeYml).toContain('JWT_SECRET=${JWT_SECRET:-dev-secret-change-me}');
         expect(composeYml).toMatch(/NODE_ENV=?\$\{NODE_ENV:-development\}/);
+        expect(composeYml).not.toContain('27017:27017');
         expect(composeYml).toContain('5000:5000');
         expect(composeYml).toContain('5173:80');
     });
@@ -73,6 +74,9 @@ describe('Task 5: Docker Compose, GitHub Actions CI, Repo Hygiene & Documentatio
     it('configures GitHub Actions CI with mongo:7 service, TEST_MONGO_URI, Node 22, and Backend + Frontend checks', async () => {
         const ciYml = fs.readFileSync(resolveRepoPath('.github', 'workflows', 'ci.yml'), 'utf8');
         expect(ciYml).toContain('image: mongo:7');
+        expect(ciYml).toContain(
+            '--health-cmd "mongosh --quiet --eval \'db.runCommand({ping:1}).ok\'"'
+        );
         expect(ciYml).toContain('TEST_MONGO_URI: mongodb://127.0.0.1:27017/deckai_ci_test');
         expect(ciYml).toMatch(/node-version:\s*['"]?22['"]?/);
         expect(ciYml).toContain('npm test');
