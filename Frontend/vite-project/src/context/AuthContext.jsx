@@ -16,45 +16,6 @@ export const AuthContext = createContext(null);
 
 const PUBLIC_PATHS = new Set(['/', '/login', '/register']);
 
-const bannerStyle = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: '12px',
-  padding: '8px 18px',
-  fontSize: '13px',
-  lineHeight: 1.4,
-  borderBottom: '1px solid var(--border)',
-  background: 'var(--surface-alt)',
-  color: 'var(--text)',
-  zIndex: 45,
-};
-
-const badgeStyle = {
-  display: 'inline-block',
-  marginRight: '8px',
-  padding: '2px 8px',
-  borderRadius: '999px',
-  fontSize: '11px',
-  fontWeight: 800,
-  letterSpacing: '0.04em',
-  textTransform: 'uppercase',
-  background: 'rgba(79, 70, 229, 0.14)',
-  color: 'var(--primary-2)',
-};
-
-const dismissButtonStyle = {
-  flex: '0 0 auto',
-  padding: '4px 10px',
-  border: '1px solid var(--border)',
-  borderRadius: '8px',
-  background: 'var(--surface)',
-  color: 'var(--muted)',
-  fontSize: '12px',
-  fontWeight: 600,
-  cursor: 'pointer',
-};
-
 export function AuthProvider({ children }) {
   const location = useLocation();
   const sessionSeqRef = useRef(0);
@@ -195,14 +156,14 @@ export function AuthProvider({ children }) {
   return (
     <AuthContext.Provider value={value}>
       {showBanner && (
-        <div className="demo-sandbox-banner" role="status" aria-live="polite" style={bannerStyle}>
-          <span>
-            <span style={badgeStyle}>Browser Sandbox</span>
+        <div className="demo-sandbox-banner" role="status" aria-live="polite">
+          <span className="demo-sandbox-banner__copy">
+            <span className="demo-sandbox-banner__badge">Browser Sandbox</span>
             <strong>Instant Demo Active</strong> — Edits, slide versions, and .pptx exports run offline in this browser tab.
           </span>
           <button
             type="button"
-            style={dismissButtonStyle}
+            className="demo-sandbox-banner__dismiss"
             onClick={() => setBannerDismissed(true)}
             aria-label="Dismiss sandbox notice"
           >

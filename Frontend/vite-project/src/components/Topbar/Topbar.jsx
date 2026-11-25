@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import Icon from '../Icon/Icon';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import './Topbar.css';
 
 function initials(name = '') {
@@ -19,6 +20,7 @@ export default function Topbar({
   showSearch,
 }) {
   const { user } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const avatar = useMemo(() => initials(user?.fullName || user?.email || ''), [user]);
   const shouldShowSearch = showSearch ?? Boolean(onSearchChange);
 
@@ -31,7 +33,7 @@ export default function Topbar({
       <div className="topbar__actions">
         {shouldShowSearch && (
           <label className="topbar__search">
-            <Icon name="search" size={19} />
+            <Icon name="search" size={16} />
             <input
               type="search"
               value={searchValue}
@@ -42,6 +44,15 @@ export default function Topbar({
           </label>
         )}
         {action}
+        <button
+          type="button"
+          className="topbar__theme-toggle"
+          onClick={toggleTheme}
+          aria-label="Toggle color theme"
+          title={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+        >
+          <Icon name={isDark ? 'sun' : 'moon'} size={17} />
+        </button>
         <span className="topbar__avatar" title={user?.email || 'Account'}>{avatar}</span>
       </div>
     </header>

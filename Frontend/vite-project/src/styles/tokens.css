@@ -1,0 +1,172 @@
+/* ─────────────────────────────────────────────────────────────────────────
+ * src/styles/tokens.css
+ *
+ * Open Design `linear-app` semantic design tokens for DeckAI (Light + Dark).
+ * Engineered precision: Inter Variable ("cv01", "ss03"), crisp 1px hairlines,
+ * luminance-stepped surfaces, and single brand accent (#5e6ad2).
+ * ───────────────────────────────────────────────────────────────────────── */
+
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  /* ─── Surface ────────────────────────────────────────────────────────── */
+  --bg:               #f7f8f8;
+  --bg-panel:         #f3f4f5;
+  --surface:          #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-glass:    rgba(255, 255, 255, 0.84);
+
+  /* ─── Foreground ─────────────────────────────────────────────────────── */
+  --fg:    #111315;
+  --fg-2:  #3c4149;
+  --muted: #62666d;
+  --meta:  #8a8f98;
+
+  /* ─── Border ─────────────────────────────────────────────────────────── */
+  --border:        #e2e5ea;
+  --border-soft:   #eef0f3;
+  --border-strong: #cdd2da;
+
+  /* ─── Accent (Linear Indigo — NOT Tailwind default indigo) ───────────── */
+  --accent:        #5e6ad2;
+  --accent-on:     #ffffff;
+  --accent-hover:  #4752c4;
+  --accent-active: #3c46b0;
+  --accent-soft:   rgba(94, 106, 210, 0.10);
+  --accent-border: rgba(94, 106, 210, 0.28);
+  --accent-text:   #4752c4;
+
+  /* ─── Semantic Status ────────────────────────────────────────────────── */
+  --success:        #27a644;
+  --success-soft:   rgba(39, 166, 68, 0.10);
+  --success-text:   #1d7d33;
+
+  --warn:           #eab308;
+  --warn-soft:      rgba(234, 179, 8, 0.12);
+  --warn-text:      #a16207;
+
+  --danger:         #dc2626;
+  --danger-soft:    rgba(220, 38, 38, 0.08);
+  --danger-border:  rgba(220, 38, 38, 0.24);
+  --danger-text:    #b91c1c;
+
+  /* ─── Typography ─────────────────────────────────────────────────────── */
+  --font-display: "Inter Variable", "Inter", "SF Pro Display", -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-body:    "Inter Variable", "Inter", "SF Pro Display", -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-mono:    "JetBrains Mono", "Berkeley Mono", ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+
+  --text-xs:   12px;
+  --text-sm:   14px;
+  --text-base: 16px;
+  --text-lg:   18px;
+  --text-xl:   24px;
+  --text-2xl:  32px;
+  --text-3xl:  48px;
+  --text-4xl:  72px;
+
+  --leading-body:     1.5;
+  --leading-tight:    1.05;
+  --tracking-display: -0.022em;
+
+  /* ─── Spacing ────────────────────────────────────────────────────────── */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-12: 48px;
+
+  /* ─── Radius ─────────────────────────────────────────────────────────── */
+  --radius-sm:   6px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-pill: 9999px;
+
+  /* ─── Elevation & Focus ──────────────────────────────────────────────── */
+  --elev-flat:   none;
+  --elev-ring:   0 0 0 1px var(--border);
+  --elev-raised:
+    0 2px 6px rgba(17, 19, 21, 0.06),
+    0 0 0 1px rgba(17, 19, 21, 0.04);
+
+  --focus-ring:
+    0 0 0 2px color-mix(in oklab, var(--accent), transparent 28%),
+    0 4px 12px rgba(0, 0, 0, 0.08);
+
+  /* ─── Motion & Layout ────────────────────────────────────────────────── */
+  --motion-fast:    150ms;
+  --motion-base:    200ms;
+  --ease-standard:  cubic-bezier(0.2, 0, 0, 1);
+  --sidebar-width:  252px;
+  --container-max:  1200px;
+
+  /* ─── Legacy Compatibility Aliases ───────────────────────────────────── */
+  --primary:      var(--accent);
+  --primary-2:    var(--accent-hover);
+  --primary-soft: var(--accent-soft);
+  --sidebar:      var(--bg-panel);
+  --surface-alt:  var(--bg-panel);
+  --text:         var(--fg);
+  --shadow:       var(--elev-raised);
+
+  font-family: var(--font-body);
+  font-feature-settings: "cv01", "ss03";
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* ─── Surface ────────────────────────────────────────────────────────── */
+  --bg:               #08090a;
+  --bg-panel:         #0f1011;
+  --surface:          #191a1b;
+  --surface-elevated: #222326;
+  --surface-glass:    rgba(25, 26, 27, 0.84);
+
+  /* ─── Foreground ─────────────────────────────────────────────────────── */
+  --fg:    #f7f8f8;
+  --fg-2:  #d0d6e0;
+  --muted: #8a8f98;
+  --meta:  #62666d;
+
+  /* ─── Border ─────────────────────────────────────────────────────────── */
+  --border:        rgba(255, 255, 255, 0.08);
+  --border-soft:   rgba(255, 255, 255, 0.05);
+  --border-strong: rgba(255, 255, 255, 0.14);
+
+  /* ─── Accent ─────────────────────────────────────────────────────────── */
+  --accent:        #5e6ad2;
+  --accent-on:     #ffffff;
+  --accent-hover:  #828fff;
+  --accent-active: #4752c4;
+  --accent-soft:   rgba(94, 106, 210, 0.16);
+  --accent-border: rgba(130, 143, 255, 0.34);
+  --accent-text:   #9ba6ff;
+
+  /* ─── Semantic Status ────────────────────────────────────────────────── */
+  --success:        #27a644;
+  --success-soft:   rgba(39, 166, 68, 0.16);
+  --success-text:   #56d364;
+
+  --warn:           #eab308;
+  --warn-soft:      rgba(234, 179, 8, 0.16);
+  --warn-text:      #facc15;
+
+  --danger:         #dc2626;
+  --danger-soft:    rgba(220, 38, 38, 0.16);
+  --danger-border:  rgba(248, 113, 113, 0.32);
+  --danger-text:    #f87171;
+
+  /* ─── Elevation & Focus ──────────────────────────────────────────────── */
+  --elev-raised:
+    rgba(0, 0, 0, 0.4) 0px 2px 4px,
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+
+  --focus-ring:
+    0 0 0 2px color-mix(in oklab, var(--accent), transparent 30%),
+    0 4px 12px rgba(0, 0, 0, 0.1);
+}

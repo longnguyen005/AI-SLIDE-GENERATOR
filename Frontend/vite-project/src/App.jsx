@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useContext } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import LandingPage from './pages/LandingPage/LandingPage';
 import LoginPage from './pages/AuthPage/LoginPage';
@@ -9,13 +9,14 @@ import OutlinePage from './pages/OutlinePage/OutlinePage';
 import PreviewPage from './pages/PreviewPage/PreviewPage';
 import EditorPage from './pages/EditorPage/EditorPage';
 import { AuthContext, AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeContext, ThemeProvider } from './context/ThemeContext';
 import { getToken } from './service/apiClient';
 
 function RequireAuth({ children }) {
   const { user, loading, isBrowserDemo } = useAuth();
   if (loading) {
     return (
-      <div className="dashboard-empty" style={{ margin: '48px auto', maxWidth: 420, textAlign: 'center' }}>
+      <div className="dashboard-empty app-loading-state">
         Loading workspace...
       </div>
     );
@@ -45,19 +46,19 @@ function AppRoutes() {
 
 export default function App() {
   const existingAuth = useContext(AuthContext);
+  const existingTheme = useContext(ThemeContext);
 
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('deckai_theme');
-    document.documentElement.dataset.theme = savedTheme === 'dark' ? 'dark' : 'light';
-  }, []);
-
-  if (existingAuth) {
-    return <AppRoutes />;
-  }
-
-  return (
+  const authTree = existingAuth ? (
+    <AppRoutes />
+  ) : (
     <AuthProvider>
       <AppRoutes />
     </AuthProvider>
   );
+
+  if (existingTheme) {
+    return authTree;
+  }
+
+  return <ThemeProvider>{authTree}</ThemeProvider>;
 }

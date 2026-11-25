@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import Icon from '../Icon/Icon';
 import Logo from '../Logo/Logo';
 import Button from '../Button/Button';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import './SideBar.css';
 
 const navItems = [
@@ -25,36 +26,63 @@ function formatDate(value) {
 export default function Sidebar() {
   const navigate = useNavigate();
   const { user, loading, isBrowserDemo, logout: authLogout } = useAuth();
+  const { isDark, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const [panel, setPanel] = useState('');
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('deckai_theme') === 'dark');
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = darkMode ? 'dark' : 'light';
-    localStorage.setItem('deckai_theme', darkMode ? 'dark' : 'light');
-  }, [darkMode]);
 
   const displayName = user?.fullName || (!loading ? 'Account' : 'Loading account...');
   const displayEmail = user?.email || (!loading ? 'Signed in' : 'Please wait');
   const displayInitials = useMemo(() => initials(user?.fullName || user?.email || ''), [user]);
 
   const togglePanel = (name) => setPanel((value) => (value === name ? '' : name));
-  const openPopup = (name) => setPanel(name);
+  const openPopup = (name) => {
+    setOpen(false);
+    setPanel(name);
+  };
 
   const handleLogout = () => {
+    setOpen(false);
     authLogout();
     navigate('/');
   };
 
+  const popupMeta =
+    panel === 'settings'
+      ? { title: 'Settings', subtitle: 'Customize your workspace' }
+      : panel === 'help'
+        ? { title: 'Shortcuts & tips', subtitle: 'Keyboard navigation & AI slide workflow' }
+        : { title: 'Account details', subtitle: 'Your DeckAI profile' };
+
   return (
     <>
-      <button className="sidebar-toggle" onClick={() => setOpen((value) => !value)} aria-label="Open menu">
-        <Icon name={open ? 'close' : 'menu'} />
+      <button
+        type="button"
+        className="sidebar-toggle"
+        onClick={() => setOpen((value) => !value)}
+        aria-label="Open menu"
+        aria-expanded={open}
+      >
+        <Icon name={open ? 'close' : 'menu'} size={18} />
       </button>
+
+      {open && (
+        <button
+          type="button"
+          className="sidebar-backdrop"
+          aria-label="Close navigation menu"
+          onClick={() => setOpen(false)}
+        />
+      )}
+
       <aside className={`sidebar ${open ? 'sidebar--open' : ''}`}>
         <div className="sidebar__header">
           <Logo subtitle="Cognitive flow" />
-          <button type="button" className="workspace-box" onClick={() => togglePanel('workspace')}>
+          <button
+            type="button"
+            className="workspace-box"
+            onClick={() => togglePanel('workspace')}
+            aria-expanded={panel === 'workspace'}
+          >
             <span>Workspace</span>
             <strong>{isBrowserDemo ? 'Demo Sandbox' : 'Personal'}</strong>
             <Icon name="chevronDown" size={16} />
@@ -78,33 +106,66 @@ export default function Sidebar() {
               className={({ isActive }) => `sidebar__link ${isActive ? 'sidebar__link--active' : ''}`}
               onClick={() => setOpen(false)}
             >
-              <span className="sidebar__icon"><Icon name={item.icon} size={21} /></span>
+              <span className="sidebar__icon"><Icon name={item.icon} size={18} /></span>
               <span>{item.label}</span>
             </NavLink>
           ))}
         </nav>
 
         <div className="sidebar__footer">
-          <button type="button" className="sidebar__utility sidebar__utility--button" onClick={() => openPopup('settings')}><Icon name="settings" size={20} /> Settings</button>
-          <a href="#help" className="sidebar__utility"><Icon name="help" size={20} /> Help Center</a>
-          <button type="button" className="sidebar__utility sidebar__utility--button" onClick={handleLogout}><Icon name="logout" size={20} /> Log out</button>
+          <button
+            type="button"
+            className="sidebar__utility sidebar__utility--button"
+            onClick={() => openPopup('settings')}
+          >
+            <Icon name="settings" size={18} /> Settings
+          </button>
+          <button
+            type="button"
+            className="sidebar__utility sidebar__utility--button"
+            onClick={() => openPopup('help')}
+          >
+            <Icon name="help" size={18} /> Shortcuts &amp; tips
+          </button>
+          <button
+            type="button"
+            className="sidebar__utility sidebar__utility--button"
+            onClick={handleLogout}
+          >
+            <Icon name="logout" size={18} /> Log out
+          </button>
           <button type="button" className="sidebar__profile" onClick={() => openPopup('account')}>
             <span className="avatar avatar--photo">{displayInitials}</span>
-            <span><strong>{displayName}</strong><small>{displayEmail}</small></span>
-            <Icon name="dots" size={18} />
+            <span>
+              <strong>{displayName}</strong>
+              <small>{displayEmail}</small>
+            </span>
+            <Icon name="dots" size={16} />
           </button>
         </div>
       </aside>
 
-      {(panel === 'settings' || panel === 'account') && (
-        <div className="sidebar-popup-backdrop">
-          <section className="sidebar-popup" role="dialog" aria-modal="true">
+      {(panel === 'settings' || panel === 'account' || panel === 'help') && (
+        <div
+          className="sidebar-popup-backdrop"
+          role="presentation"
+          onMouseDown={() => setPanel('')}
+        >
+          <section
+            className="sidebar-popup"
+            role="dialog"
+            aria-modal="true"
+            aria-label={popupMeta.title}
+            onMouseDown={(event) => event.stopPropagation()}
+          >
             <header className="sidebar-popup__header">
               <div>
-                <strong>{panel === 'settings' ? 'Settings' : 'Account details'}</strong>
-                <small>{panel === 'settings' ? 'Customize your workspace' : 'Your DeckAI profile'}</small>
+                <strong>{popupMeta.title}</strong>
+                <small>{popupMeta.subtitle}</small>
               </div>
-              <button type="button" onClick={() => setPanel('')} aria-label="Close popup"><Icon name="close" size={20} /></button>
+              <button type="button" onClick={() => setPanel('')} aria-label="Close popup">
+                <Icon name="close" size={18} />
+              </button>
             </header>
 
             {panel === 'settings' && (
@@ -114,8 +175,41 @@ export default function Sidebar() {
                     <strong>Dark mode</strong>
                     <small>Switch the workspace to a darker color theme.</small>
                   </span>
-                  <input type="checkbox" checked={darkMode} onChange={(event) => setDarkMode(event.target.checked)} />
+                  <input
+                    type="checkbox"
+                    checked={isDark}
+                    onChange={(event) => setTheme(event.target.checked ? 'dark' : 'light')}
+                  />
                 </label>
+              </div>
+            )}
+
+            {panel === 'help' && (
+              <div className="sidebar-popup__body">
+                <ul className="sidebar-tips-list">
+                  <li className="sidebar-tips-item">
+                    <div>
+                      <strong>Keyboard slide navigation</strong>
+                      <small>Use Left and Right Arrow keys in Presentation Preview to step through slides rapidly.</small>
+                    </div>
+                    <span className="sidebar-kbd-group">
+                      <kbd>←</kbd>
+                      <kbd>→</kbd>
+                    </span>
+                  </li>
+                  <li className="sidebar-tips-item">
+                    <div>
+                      <strong>Targeted AI regeneration &amp; history</strong>
+                      <small>Refine any slide with custom prompts in the Editor, and restore prior snapshots from Version History.</small>
+                    </div>
+                  </li>
+                  <li className="sidebar-tips-item">
+                    <div>
+                      <strong>Instant Demo &amp; PowerPoint export</strong>
+                      <small>Create outlines, switch across 5 slide layouts, and export real .pptx decks even offline in Browser Sandbox mode.</small>
+                    </div>
+                  </li>
+                </ul>
               </div>
             )}
 
