@@ -1,0 +1,233 @@
+.hero-showcase {
+  position: relative;
+  z-index: 1;
+  width: min(1100px, 100%);
+  margin: 44px auto 0;
+  text-align: left;
+}
+
+.hero-showcase__window {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  box-shadow: var(--elev-raised);
+}
+
+.hero-showcase__chrome {
+  display: grid;
+  gap: 12px;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+
+.hero-showcase__titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.hero-showcase__dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.hero-showcase__dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+}
+
+.hero-showcase__doc {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--fg-2);
+  font-size: var(--text-xs);
+  font-weight: 500;
+}
+
+.hero-showcase__doc svg {
+  flex: 0 0 auto;
+  color: var(--accent-text);
+}
+
+.hero-showcase__doc-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--fg);
+}
+
+.hero-showcase__doc-badge {
+  flex: 0 0 auto;
+  padding-left: 8px;
+  border-left: 1px solid var(--border);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.hero-showcase__tablist {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.hero-showcase__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--muted);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard);
+}
+
+.hero-showcase__tab:hover {
+  border-color: var(--border-strong);
+  color: var(--fg);
+}
+
+.hero-showcase__tab:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.hero-showcase__tab--active {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.hero-showcase__tab-num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  opacity: 0.78;
+}
+
+.hero-showcase__stage {
+  padding: 18px;
+  background: var(--bg);
+}
+
+.hero-showcase__stage .slide-canvas {
+  width: 100%;
+}
+
+.hero-showcase__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+
+.hero-showcase__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.hero-showcase__meta-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.hero-showcase__meta-code {
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--fg-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.hero-showcase__meta-note {
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+
+@media (max-width: 760px) {
+  .hero-showcase__meta-note {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero-showcase {
+    margin-top: 32px;
+  }
+
+  .hero-showcase__chrome {
+    padding: 12px;
+  }
+
+  .hero-showcase__titlebar {
+    gap: 8px;
+  }
+
+  .hero-showcase__tablist {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .hero-showcase__tab {
+    flex: 0 0 auto;
+    padding: 0 10px;
+    font-size: var(--text-xs);
+  }
+
+  .hero-showcase__stage {
+    padding: 10px;
+  }
+
+  .hero-showcase__footer {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 12px;
+  }
+
+  .hero-showcase__footer .btn {
+    width: 100%;
+  }
+}

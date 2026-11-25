@@ -3,8 +3,9 @@ import path from 'node:path';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import App from '../App';
 import { AuthProvider } from '../context/AuthContext';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import Sidebar from '../components/SideBar/SideBar';
@@ -141,5 +142,63 @@ describe('DeckAI × Open Design UI Refactor', () => {
     expect(sidebarCssRaw).toMatch(
       /\.sidebar-toggle\[aria-expanded="true"\][^{]*\{[^}]*position:\s*fixed;[^}]*left:\s*calc\(min\(272px,\s*84vw\)\s*-\s*48px\);[^}]*z-index:\s*65;/s
     );
+  });
+
+  it('renders interactive 5-layout HeroShowcase on LandingPage with truthful capability metrics and no fake monitor skeleton', () => {
+    const { container } = render(
+      <MemoryRouter initialEntries={['/']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('heading', { name: /create stunning presentations/i })).toBeInTheDocument();
+    expect(container.querySelector('.monitor-demo')).not.toBeInTheDocument();
+    expect(screen.queryByText(/1000\+/i)).not.toBeInTheDocument();
+
+    const showcase = screen.getByRole('region', { name: /interactive workspace preview/i });
+    expect(showcase.querySelector('.slide-canvas--title')).toBeInTheDocument();
+
+    fireEvent.click(within(showcase).getByRole('tab', { name: /side-by-side/i }));
+    expect(showcase.querySelector('.slide-canvas--two_column')).toBeInTheDocument();
+
+    fireEvent.click(within(showcase).getByRole('tab', { name: /executive summary/i }));
+    expect(showcase.querySelector('.slide-canvas--summary')).toBeInTheDocument();
+  });
+
+  it('deduplicates LoginPage Back to home, syncs theme across AuthPage, and preserves RegisterPage input on mismatch error', () => {
+    const { unmount } = render(
+      <MemoryRouter initialEntries={['/login']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(screen.getAllByRole('link', { name: /back to home/i })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: /back to home/i })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /toggle color theme/i }));
+    expect(document.documentElement.dataset.theme).toBe('dark');
+
+    unmount();
+
+    render(
+      <MemoryRouter initialEntries={['/register']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    const nameInput = screen.getByLabelText(/full name/i);
+    const emailInput = screen.getByLabelText(/email address/i);
+    const passInput = screen.getByLabelText(/^password$/i);
+    const confirmInput = screen.getByLabelText(/confirm password/i);
+
+    fireEvent.change(nameInput, { target: { value: 'Long Nguyen' } });
+    fireEvent.change(emailInput, { target: { value: 'long@deckai.app' } });
+    fireEvent.change(passInput, { target: { value: 'Password123' } });
+    fireEvent.change(confirmInput, { target: { value: 'Mismatch999' } });
+    fireEvent.blur(confirmInput);
+
+    expect(screen.getByRole('alert')).toHaveTextContent(/passwords do not match/i);
+    expect(nameInput).toHaveValue('Long Nguyen');
+    expect(emailInput).toHaveValue('long@deckai.app');
   });
 });
