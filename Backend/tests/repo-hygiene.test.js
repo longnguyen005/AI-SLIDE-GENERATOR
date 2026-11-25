@@ -124,4 +124,39 @@ describe('Task 5: Docker Compose, GitHub Actions CI, Repo Hygiene & Documentatio
         expect(readme).toContain(defaultModels);
         expect(readme).not.toContain('gemini-2.5-flash,gemini-2.5-pro,gemini-2.0-flash');
     });
+
+    it('ships a valid branded DeckAI favicon.svg referenced by index.html with zero external URLs', () => {
+        const indexHtml = fs.readFileSync(
+            resolveRepoPath('Frontend', 'vite-project', 'index.html'),
+            'utf8'
+        );
+        expect(indexHtml).toContain('href="/favicon.svg"');
+
+        const faviconPath = resolveRepoPath('Frontend', 'vite-project', 'public', 'favicon.svg');
+        expect(fs.existsSync(faviconPath), 'Expected Frontend/vite-project/public/favicon.svg to exist').toBe(true);
+
+        const faviconSvg = fs.readFileSync(faviconPath, 'utf8').trim();
+        expect(faviconSvg).toMatch(/<svg\b[^>]*xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
+        expect(faviconSvg).toContain('#4338ca');
+        expect(faviconSvg).toContain('#7c3aed');
+        expect(faviconSvg).toMatch(/<\/svg>\s*$/);
+
+        const strippedNamespace = faviconSvg.replaceAll('http://www.w3.org/2000/svg', '');
+        expect(strippedNamespace).not.toMatch(/https?:\/\//i);
+    });
+
+    it('defines explicit dark-mode contrast rules for sidebar settings toggle and regenerate modal', () => {
+        const appCss = fs.readFileSync(
+            resolveRepoPath('Frontend', 'vite-project', 'src', 'App.css'),
+            'utf8'
+        );
+
+        expect(appCss).toContain(':root[data-theme="dark"] .sidebar-toggle-row');
+        expect(appCss).toContain(':root[data-theme="dark"] .sidebar-toggle-row strong');
+        expect(appCss).toContain(':root[data-theme="dark"] .regenerate-modal__cancel');
+        expect(appCss).toMatch(/:root\[data-theme="dark"\]\s+\.regenerate-modal__cancel:hover/);
+        expect(appCss).toMatch(
+            /:root\[data-theme="dark"\]\s+\.regenerate-modal__header\s*\{[^}]*border-bottom-color:\s*#343852/s
+        );
+    });
 });

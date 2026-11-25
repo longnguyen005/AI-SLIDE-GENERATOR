@@ -354,6 +354,32 @@ img { max-width: 100%; display: block; }
   color: #a5acc7;
 }
 
+:root[data-theme="dark"] .sidebar-toggle-row,
+:root[data-theme="dark"] .sidebar-toggle-row strong {
+  color: #eef2ff;
+}
+
+:root[data-theme="dark"] .regenerate-modal__header {
+  border-bottom-color: #343852;
+}
+
+:root[data-theme="dark"] .regenerate-modal__cancel {
+  border: 1px solid #414767;
+  border-radius: 11px;
+  background: #252849;
+  color: #eef2ff;
+}
+
+:root[data-theme="dark"] .regenerate-modal__cancel:hover:not(:disabled) {
+  background: #2f335c;
+  border-color: #555d86;
+}
+
+:root[data-theme="dark"] .regenerate-modal__cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 :root[data-theme="dark"] .slide-canvas {
   background:
     radial-gradient(circle at 18% 18%, rgba(124, 58, 237, .18), transparent 28%),
