@@ -1,5 +1,11 @@
 import { Router } from 'express';
-import { deleteSlide, regenerateSlide, updateSlide, versions } from '../controllers/slide.controller.js';
+import {
+    deleteSlide,
+    regenerateSlide,
+    restoreSlideVersion,
+    updateSlide,
+    versions
+} from '../controllers/slide.controller.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { validateBody } from '../middleware/validateRequest.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -13,5 +19,6 @@ router.patch('/:slideId', validateBody(slideUpdateSchema), asyncHandler(updateSl
 router.delete('/:slideId', asyncHandler(deleteSlide));
 router.post('/:slideId/regenerate', validateBody(regenerateSchema), asyncHandler(regenerateSlide));
 router.get('/:slideId/versions', asyncHandler(versions));
+router.post('/:slideId/versions/:versionId/restore', asyncHandler(restoreSlideVersion));
 
 export default router;

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import { createDeck, deleteDeck, getDeck, listDecks, summary, updateDeck } from '../controllers/deck.controller.js';
 import { exportPptx, listExports } from '../controllers/export.controller.js';
 import { generateDeckOutline, generateDeckSlides, getOutline, updateOutline } from '../controllers/outline.controller.js';
@@ -13,6 +14,14 @@ import {
     slideCreateSchema,
     updateDeckSchema
 } from '../validators/schemas.js';
+
+export const exportLimit = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Export rate limit reached, please wait before trying again.' }
+});
 
 const router = Router();
 
@@ -34,7 +43,7 @@ router.get('/:deckId/slides', asyncHandler(listSlides));
 router.post('/:deckId/slides', validateBody(slideCreateSchema), asyncHandler(createSlide));
 router.patch('/:deckId/slides/reorder', validateBody(reorderSchema), asyncHandler(reorderSlides));
 
-router.post('/:deckId/export/pptx', asyncHandler(exportPptx));
+router.post('/:deckId/export/pptx', exportLimit, asyncHandler(exportPptx));
 router.get('/:deckId/exports', asyncHandler(listExports));
 
 export default router;

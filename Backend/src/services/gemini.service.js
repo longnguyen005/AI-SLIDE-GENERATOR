@@ -2,23 +2,33 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { env } from '../config/env.js';
 import { makeId } from '../utils/ids.js';
 
+const VALID_LAYOUTS = new Set(['title', 'content', 'two_column', 'section', 'summary']);
+
 /* ── Model pool: every (key × model) combination ────────── */
 
-const pool = [];
+const defaultPool = [];
 for (const apiKey of env.geminiApiKeys) {
     const genAI = new GoogleGenerativeAI(apiKey);
     for (const modelName of env.geminiModels) {
-        pool.push({
+        defaultPool.push({
             label: `${modelName} (key …${apiKey.slice(-4)})`,
             instance: genAI.getGenerativeModel({ model: modelName })
         });
     }
 }
 
-if (pool.length) {
-    console.info(`[Gemini] Initialized ${pool.length} model slots: ${pool.map((p) => p.label).join(', ')}`);
-} else {
-    console.warn('[Gemini] No API keys configured — AI features will use stub responses.');
+let activePool = defaultPool;
+
+if (process.env.NODE_ENV !== 'test') {
+    if (defaultPool.length) {
+        console.info(`[Gemini] Initialized ${defaultPool.length} model slots: ${defaultPool.map((p) => p.label).join(', ')}`);
+    } else {
+        console.warn('[Gemini] No API keys configured — AI features will use stub responses.');
+    }
+}
+
+export function setModelPoolForTesting(slots) {
+    activePool = Array.isArray(slots) ? slots : defaultPool;
 }
 
 /* ── Helpers ──────────────────────────────────────────────── */
@@ -27,7 +37,37 @@ function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+export function extractJsonPayload(text) {
+    if (typeof text !== 'string' || !text.trim()) {
+        throw new SyntaxError('Empty AI response payload');
+    }
+
+    const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    const candidate = (fenceMatch ? fenceMatch[1] : text).trim();
+
+    try {
+        return JSON.parse(candidate);
+    } catch {
+        const firstBrace = candidate.indexOf('{');
+        const lastBrace = candidate.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace > firstBrace) {
+            return JSON.parse(candidate.slice(firstBrace, lastBrace + 1));
+        }
+
+        const firstBracket = candidate.indexOf('[');
+        const lastBracket = candidate.lastIndexOf(']');
+        if (firstBracket !== -1 && lastBracket > firstBracket) {
+            return JSON.parse(candidate.slice(firstBracket, lastBracket + 1));
+        }
+
+        throw new SyntaxError('Failed to parse JSON payload from AI response');
+    }
+}
+
 function isRetryableError(err) {
+    if (err instanceof SyntaxError || err?.name === 'SyntaxError') {
+        return true;
+    }
     const status = Number(err?.status || err?.httpStatusCode || err?.code || 0);
     const msg = (err?.message || '').toLowerCase();
     return (
@@ -41,8 +81,17 @@ function isRetryableError(err) {
 }
 
 function friendlyError(err) {
+    if (err instanceof SyntaxError || err?.name === 'SyntaxError') {
+        return 'AI service returned an invalid response format. Please try again.';
+    }
     const msg = (err?.message || '').toLowerCase();
-    if (msg.includes('429') || msg.includes('rate limit') || msg.includes('resource exhausted') || msg.includes('too many requests') || msg.includes('quota')) {
+    if (
+        msg.includes('429') ||
+        msg.includes('rate limit') ||
+        msg.includes('resource exhausted') ||
+        msg.includes('too many requests') ||
+        msg.includes('quota')
+    ) {
         return 'AI service is currently overloaded. Please wait a moment and try again.';
     }
     if (msg.includes('503') || msg.includes('overloaded') || msg.includes('service unavailable')) {
@@ -55,35 +104,47 @@ function friendlyError(err) {
 }
 
 /**
- * Attempt the prompt across every (key × model) slot with retries.
+ * Attempt the prompt across every (key × model) slot with retries and JSON extraction.
  * - Each slot gets up to 2 attempts with exponential backoff.
- * - If a slot fails with a retryable error, move to the next slot.
+ * - Malformed JSON (SyntaxError) and transient upstream errors trigger retry / slot fallback.
  * - Non-retryable errors are thrown immediately with a friendly message.
  */
 const MAX_RETRIES_PER_SLOT = 2;
-const BASE_DELAY_MS = 1500;
+const BASE_DELAY_MS = process.env.NODE_ENV === 'test' ? 1 : 1500;
 
-async function callWithFallback(prompt) {
-    if (pool.length === 0) return null;
+export async function callWithFallback(prompt, options = {}) {
+    const slots = options.slots ?? activePool;
+    const baseDelayMs = options.baseDelayMs ?? BASE_DELAY_MS;
+
+    if (slots.length === 0) {
+        return null;
+    }
 
     let lastError;
 
-    for (let i = 0; i < pool.length; i++) {
-        const { label, instance } = pool[i];
+    for (let i = 0; i < slots.length; i += 1) {
+        const { label, instance } = slots[i];
 
-        for (let attempt = 0; attempt < MAX_RETRIES_PER_SLOT; attempt++) {
+        for (let attempt = 0; attempt < MAX_RETRIES_PER_SLOT; attempt += 1) {
             try {
                 if (attempt > 0 || i > 0) {
-                    const delay = BASE_DELAY_MS * Math.pow(2, attempt);
-                    await sleep(delay);
+                    const delay = baseDelayMs * Math.pow(2, attempt);
+                    if (delay > 0) {
+                        await sleep(delay);
+                    }
                 }
 
                 const result = await instance.generateContent(prompt);
+                const rawText =
+                    typeof result?.response?.text === 'function'
+                        ? result.response.text()
+                        : String(result?.text ?? '');
+                const parsed = extractJsonPayload(rawText);
 
-                if (i > 0 || attempt > 0) {
-                    console.info(`[Gemini] ✓ Succeeded with ${label} (attempt ${attempt + 1})`);
+                if ((i > 0 || attempt > 0) && process.env.NODE_ENV !== 'test') {
+                    console.info(`[Gemini] Succeeded with ${label} (attempt ${attempt + 1})`);
                 }
-                return result;
+                return parsed;
             } catch (err) {
                 if (!isRetryableError(err)) {
                     const error = new Error(friendlyError(err));
@@ -91,33 +152,29 @@ async function callWithFallback(prompt) {
                     throw error;
                 }
 
-                console.warn(
-                    `[Gemini] ✗ ${label} attempt ${attempt + 1} failed: ${(err.message || '').slice(0, 100)}`
-                );
+                if (process.env.NODE_ENV !== 'test') {
+                    console.warn(
+                        `[Gemini] ${label} attempt ${attempt + 1} failed: ${(err.message || '').slice(0, 100)}`
+                    );
+                }
                 lastError = err;
             }
         }
 
-        if (i < pool.length - 1) {
-            console.warn(`[Gemini] Switching to next slot: ${pool[i + 1].label}`);
+        if (i < slots.length - 1 && process.env.NODE_ENV !== 'test') {
+            console.warn(`[Gemini] Switching to next slot: ${slots[i + 1].label}`);
         }
     }
 
-    // All slots and retries exhausted — throw friendly error
     const error = new Error(friendlyError(lastError));
-    error.statusCode = 429;
+    error.statusCode = lastError instanceof SyntaxError || lastError?.name === 'SyntaxError' ? 502 : 429;
     throw error;
-}
-
-function parseJson(text) {
-    const trimmed = text.replace(/```json|```/g, '').trim();
-    return JSON.parse(trimmed);
 }
 
 /* ── Public API ───────────────────────────────────────────── */
 
 export async function generateOutline(input) {
-    const result = await callWithFallback(`
+    const parsed = await callWithFallback(`
 Return strict JSON only. Do not wrap in markdown.
 Shape:
 {"title":"string","sections":[{"title":"string","summary":"string"}]}
@@ -136,22 +193,25 @@ Requirements:
 - Make the outline presentation-ready for a polished SaaS/business deck.
 `);
 
-    if (!result) {
+    if (!parsed) {
         return {
             title: input.topic,
             sections: Array.from({ length: input.slideCount }, (_, index) => ({
                 id: makeId(),
-                title: index === 0 ? `Why ${input.topic} matters now` : `${input.topic} - Strategic point ${index + 1}`,
+                title:
+                    index === 0
+                        ? `Why ${input.topic} matters now`
+                        : `${input.topic} - Strategic point ${index + 1}`,
                 summary: `Frame one specific ${input.tone} insight, include supporting context, and end with a presenter-ready takeaway.`,
                 order: index + 1
             }))
         };
     }
 
-    const parsed = parseJson(result.response.text());
+    const rawSections = Array.isArray(parsed.sections) ? parsed.sections : [];
     return {
         title: String(parsed.title || input.topic),
-        sections: parsed.sections.slice(0, input.slideCount).map((section, index) => ({
+        sections: rawSections.slice(0, input.slideCount).map((section, index) => ({
             id: makeId(),
             title: String(section.title || `Slide ${index + 1}`),
             summary: String(section.summary || ''),
@@ -161,7 +221,7 @@ Requirements:
 }
 
 export async function generateSlides(deck, outline) {
-    const result = await callWithFallback(`
+    const parsed = await callWithFallback(`
 Return strict JSON only. Do not wrap in markdown.
 Shape:
 {"slides":[{"title":"string","content":["string"],"speakerNotes":"string","layout":"title|content|two_column|section|summary"}]}
@@ -186,7 +246,7 @@ Slide quality requirements:
 - When useful, include one bullet that suggests a concrete visual angle such as trend, contrast, timeline, system map, or impact signal, but keep it audience-facing.
 `);
 
-    if (!result) {
+    if (!parsed) {
         return outline.map((section, index) => ({
             slideNumber: index + 1,
             title: section.title,
@@ -200,22 +260,36 @@ Slide quality requirements:
         }));
     }
 
-    return parseJson(result.response.text()).slides;
+    return Array.isArray(parsed.slides) ? parsed.slides : [];
 }
 
 export async function regenerateSlide(input) {
-    const result = await callWithFallback(
-        `Return strict JSON only with shape {"title":"string","content":["string"],"speakerNotes":"string","layout":"content"}. Regenerate one English slide for deck topic "${input.topic}", tone "${input.tone}". Current slide: ${JSON.stringify(input.currentSlide)}. Previous title: ${input.previousTitle || ''}. Next title: ${input.nextTitle || ''}. Instruction: ${input.instruction || 'Improve clarity'}.`
+    const preservedLayout = VALID_LAYOUTS.has(input.currentSlide?.layout) ? input.currentSlide.layout : null;
+    const targetLayout = preservedLayout || 'content';
+    const language = input.language || 'English';
+
+    const parsed = await callWithFallback(
+        `Return strict JSON only. Do not wrap in markdown. Shape: {"title":"string","content":["string"],"speakerNotes":"string","layout":"${targetLayout}"}. Regenerate one slide in ${language} for deck topic "${input.topic}", tone "${input.tone}", preserving layout "${targetLayout}". Current slide: ${JSON.stringify(input.currentSlide)}. Previous title: ${input.previousTitle || ''}. Next title: ${input.nextTitle || ''}. Instruction: ${input.instruction || 'Improve clarity'}.`
     );
 
-    if (!result) {
+    if (!parsed) {
         return {
             ...input.currentSlide,
+            layout: targetLayout,
             title: input.currentSlide.title,
             content: input.currentSlide.content.map((line) => `${line}`),
             speakerNotes: `${input.currentSlide.speakerNotes || ''}\nRegenerated with instruction: ${input.instruction || 'Polish the slide.'}`.trim()
         };
     }
 
-    return parseJson(result.response.text());
+    return {
+        title: String(parsed.title || input.currentSlide?.title || 'Untitled slide'),
+        content: Array.isArray(parsed.content)
+            ? parsed.content.map(String)
+            : Array.isArray(input.currentSlide?.content)
+              ? input.currentSlide.content.map(String)
+              : [],
+        speakerNotes: String(parsed.speakerNotes ?? input.currentSlide?.speakerNotes ?? ''),
+        layout: preservedLayout || (VALID_LAYOUTS.has(parsed.layout) ? parsed.layout : 'content')
+    };
 }
