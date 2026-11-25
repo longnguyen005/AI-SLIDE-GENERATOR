@@ -9,7 +9,8 @@ import {
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const DEFAULT_TIMEOUT_MS = 15000;
 const AI_TIMEOUT_MS = 45000;
-const DEMO_LOGIN_TIMEOUT_MS = 6000;
+const DEMO_LOGIN_TIMEOUT_MS = 3500;
+const PUBLIC_PATHS = new Set(['/', '/login', '/register']);
 
 export { isBrowserDemoActive };
 
@@ -68,6 +69,27 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = DEFAULT_TIMEOUT_M
   }
 }
 
+function handleUnauthorized(path, requestToken) {
+  const isExcludedEndpoint =
+    path.startsWith('/auth/login') ||
+    path.startsWith('/auth/register') ||
+    path.startsWith('/auth/demo') ||
+    path === '/auth/me';
+
+  if (isExcludedEndpoint || isBrowserDemoActive()) {
+    return;
+  }
+
+  if (requestToken && getToken() !== requestToken) {
+    return;
+  }
+
+  clearToken();
+  if (!PUBLIC_PATHS.has(window.location.pathname)) {
+    window.location.assign('/login');
+  }
+}
+
 async function request(path, options = {}, timeoutMs = DEFAULT_TIMEOUT_MS) {
   const token = getToken();
   const { headers: customHeaders, ...fetchOptions } = options;
@@ -93,13 +115,8 @@ async function request(path, options = {}, timeoutMs = DEFAULT_TIMEOUT_MS) {
 
   if (!response.ok) {
     const error = isJson ? await response.json() : { message: 'Request failed' };
-    const isAuthAttempt =
-      path.startsWith('/auth/login') ||
-      path.startsWith('/auth/register') ||
-      path.startsWith('/auth/demo');
-    if (response.status === 401 && !isAuthAttempt) {
-      clearToken();
-      window.location.assign('/login');
+    if (response.status === 401) {
+      handleUnauthorized(path, token);
     }
     throw new Error(error.message || 'Request failed');
   }
@@ -135,8 +152,7 @@ async function downloadRequest(path, options = {}, timeoutMs = AI_TIMEOUT_MS) {
     const isJson = response.headers.get('content-type')?.includes('application/json');
     const error = isJson ? await response.json() : { message: 'Download failed' };
     if (response.status === 401) {
-      clearToken();
-      window.location.assign('/login');
+      handleUnauthorized(path, token);
     }
     throw new Error(error.message || 'Download failed');
   }

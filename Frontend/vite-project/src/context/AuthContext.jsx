@@ -1,5 +1,13 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useLocation } from 'react-router-dom';
 import { api, clearToken, getToken, isBrowserDemoActive, setToken } from '../service/apiClient';
 import { getBrowserDemoUser } from '../service/demoStore';
@@ -49,14 +57,18 @@ const dismissButtonStyle = {
 
 export function AuthProvider({ children }) {
   const location = useLocation();
+  const sessionSeqRef = useRef(0);
   const [user, setUser] = useState(() => (isBrowserDemoActive() ? getBrowserDemoUser() : null));
   const [isBrowserDemo, setIsBrowserDemo] = useState(() => isBrowserDemoActive());
   const [loading, setLoading] = useState(() => !isBrowserDemoActive() && Boolean(getToken()));
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
   const refreshUser = useCallback(async () => {
+    const seq = ++sessionSeqRef.current;
+
     if (isBrowserDemoActive()) {
       const demoUser = getBrowserDemoUser() || (await api.me()).user;
+      if (sessionSeqRef.current !== seq) return null;
       setUser(demoUser);
       setIsBrowserDemo(true);
       setLoading(false);
@@ -73,17 +85,21 @@ export function AuthProvider({ children }) {
     setLoading(true);
     try {
       const result = await api.me();
+      if (sessionSeqRef.current !== seq) return null;
       const nextUser = result?.user || null;
       setUser(nextUser);
       setIsBrowserDemo(isBrowserDemoActive());
       return nextUser;
     } catch {
+      if (sessionSeqRef.current !== seq) return null;
       clearToken();
       setUser(null);
       setIsBrowserDemo(false);
       return null;
     } finally {
-      setLoading(false);
+      if (sessionSeqRef.current === seq) {
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -93,22 +109,25 @@ export function AuthProvider({ children }) {
     }
 
     let active = true;
+    const seq = sessionSeqRef.current;
 
     api
       .me()
       .then((result) => {
-        if (!active) return;
+        if (!active || sessionSeqRef.current !== seq) return;
         setUser(result?.user || null);
         setIsBrowserDemo(isBrowserDemoActive());
       })
       .catch(() => {
-        if (!active) return;
+        if (!active || sessionSeqRef.current !== seq) return;
         clearToken();
         setUser(null);
         setIsBrowserDemo(false);
       })
       .finally(() => {
-        if (active) setLoading(false);
+        if (active && sessionSeqRef.current === seq) {
+          setLoading(false);
+        }
       });
 
     return () => {
@@ -118,6 +137,7 @@ export function AuthProvider({ children }) {
 
   const loginWithToken = useCallback(
     async (token, nextUser = null) => {
+      sessionSeqRef.current += 1;
       setToken(token);
       setIsBrowserDemo(isBrowserDemoActive());
       setBannerDismissed(false);
@@ -132,19 +152,24 @@ export function AuthProvider({ children }) {
   );
 
   const startInstantDemo = useCallback(async () => {
+    const seq = ++sessionSeqRef.current;
     setLoading(true);
     try {
       const result = await api.loginDemo();
+      if (sessionSeqRef.current !== seq) return result;
       setUser(result.user || null);
       setIsBrowserDemo(Boolean(result.browserDemo || isBrowserDemoActive()));
       setBannerDismissed(false);
       return result;
     } finally {
-      setLoading(false);
+      if (sessionSeqRef.current === seq) {
+        setLoading(false);
+      }
     }
   }, []);
 
   const logout = useCallback(() => {
+    sessionSeqRef.current += 1;
     clearToken();
     setUser(null);
     setIsBrowserDemo(false);

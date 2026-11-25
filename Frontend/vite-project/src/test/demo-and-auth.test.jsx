@@ -1,7 +1,7 @@
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import App from '../App';
 import { AuthProvider, useAuth } from '../context/AuthContext';
@@ -110,7 +110,7 @@ describe('Task 3: Frontend AuthContext, Hybrid Browser Demo Fallback & Client PP
     expect(sessionStorage.getItem('deckai_browser_demo_v1')).toBeNull();
   });
 
-  it('falls back to Browser Demo Mode when /api/auth/demo times out via AbortController', async () => {
+  it('reaches /dashboard in under 5s via Browser Demo fallback when /api/auth/demo hangs', async () => {
     vi.useFakeTimers();
 
     const fetchMock = vi.fn((_url, options = {}) => {
@@ -124,13 +124,117 @@ describe('Task 3: Frontend AuthContext, Hybrid Browser Demo Fallback & Client PP
     });
     globalThis.fetch = fetchMock;
 
-    const loginPromise = api.loginDemo();
-    await vi.advanceTimersByTimeAsync(10000);
-    const result = await loginPromise;
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <App />
+      </MemoryRouter>
+    );
 
-    expect(result.demo).toBe(true);
-    expect(result.browserDemo).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: /try instant demo/i }));
+
+    // Advance 4000ms (< 5000ms SLA): timeout must have fired and activated Browser Demo Mode
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(4000);
+    });
+
     expect(sessionStorage.getItem('deckai_browser_demo_v1')).toBeTruthy();
+
+    vi.useRealTimers();
+    expect(await screen.findByRole('heading', { name: /^presentations$/i })).toBeInTheDocument();
+    expect(await screen.findByText(/Enterprise AI Copilots: 2026 Rollout Blueprint/i)).toBeInTheDocument();
+  });
+
+  it('clears expired 401 token on public LandingPage without forcing a hard /login redirect', async () => {
+    localStorage.setItem('deckai_token', 'expired-jwt-token');
+    const stderrSpy = vi.spyOn(globalThis.process.stderr, 'write').mockImplementation(() => true);
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    globalThis.fetch = vi.fn(async (url) => {
+      if (String(url).endsWith('/auth/me')) {
+        return {
+          ok: false,
+          status: 401,
+          headers: new Headers({ 'content-type': 'application/json' }),
+          json: async () => ({ message: 'Invalid or expired token' }),
+        };
+      }
+      throw new Error(`Unexpected fetch to ${url}`);
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <AuthProvider>
+          <AuthProbe />
+          <App />
+        </AuthProvider>
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('probe-loading')).toHaveTextContent('false');
+    });
+
+    expect(screen.getByTestId('probe-path')).toHaveTextContent('/');
+    expect(screen.getByRole('heading', { name: /create stunning presentations/i })).toBeInTheDocument();
+    expect(getToken()).toBeNull();
+
+    const navErrors = [
+      ...stderrSpy.mock.calls.map(([chunk]) => String(chunk)),
+      ...consoleErrorSpy.mock.calls.map((args) => args.map(String).join(' ')),
+    ].filter((msg) => /not implemented: navigation/i.test(msg));
+    expect(navErrors).toHaveLength(0);
+  });
+
+  it('does not wipe active Browser Demo session when an earlier hanging /auth/me settles with 401 or error after clicking Try Instant Demo', async () => {
+    localStorage.setItem('deckai_token', 'stale-sleeping-jwt');
+
+    let settleHangingMe;
+    globalThis.fetch = vi.fn((url) => {
+      if (String(url).endsWith('/auth/me')) {
+        return new Promise((resolve) => {
+          settleHangingMe = resolve;
+        });
+      }
+      if (String(url).endsWith('/auth/demo')) {
+        return Promise.reject(new TypeError('Backend sleeping'));
+      }
+      return Promise.reject(new Error(`Unexpected fetch to ${url}`));
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <AuthProvider>
+          <AuthProbe />
+          <App />
+        </AuthProvider>
+      </MemoryRouter>
+    );
+
+    // Click "Try Instant Demo" while initial /auth/me from stale token is still in-flight
+    fireEvent.click(screen.getByRole('button', { name: /try instant demo/i }));
+
+    expect(await screen.findByRole('heading', { name: /^presentations$/i })).toBeInTheDocument();
+    expect(screen.getByTestId('probe-path')).toHaveTextContent('/dashboard');
+    expect(screen.getByTestId('probe-demo')).toHaveTextContent('true');
+
+    // Now the stale /auth/me finally responds with 401
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    await act(async () => {
+      settleHangingMe({
+        ok: false,
+        status: 401,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => ({ message: 'Token expired' }),
+      });
+    });
+    consoleErrorSpy.mockRestore();
+
+    // Browser Demo session and /dashboard route must remain intact
+    expect(sessionStorage.getItem('deckai_browser_demo_v1')).toBeTruthy();
+    expect(screen.getByTestId('probe-path')).toHaveTextContent('/dashboard');
+    expect(screen.getByTestId('probe-demo')).toHaveTextContent('true');
+    expect(screen.getByTestId('probe-user')).toHaveTextContent('demo@deckai.app');
+    expect(screen.getByRole('heading', { name: /^presentations$/i })).toBeInTheDocument();
   });
 
   it('supports full CRUD, version restore snapshots, lifecycle guards, and real .pptx Blob export in Browser Demo Mode', async () => {
