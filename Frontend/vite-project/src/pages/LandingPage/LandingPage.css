@@ -330,7 +330,7 @@
 
 .landing-cta p {
   margin: 0;
-  color: rgba(255, 255, 255, 0.88);
+  color: color-mix(in oklab, var(--accent-on), transparent 12%);
   font-size: var(--text-base);
   line-height: 1.55;
 }
@@ -344,23 +344,23 @@
 }
 
 .landing-cta .landing-cta__primary {
-  background: #ffffff;
-  border-color: #ffffff;
-  color: #111315;
+  background: var(--accent-on);
+  border-color: var(--accent-on);
+  color: var(--accent-active);
 }
 
 .landing-cta .landing-cta__primary:hover:not(:disabled) {
-  background: #f3f4f5;
-  border-color: #f3f4f5;
-  color: #111315;
+  background: color-mix(in oklab, var(--accent-on), var(--accent) 8%);
+  border-color: color-mix(in oklab, var(--accent-on), var(--accent) 8%);
+  color: var(--accent-active);
 }
 
 .landing-cta__demo {
   min-height: 38px;
   padding: 0 14px;
-  border: 1px solid rgba(255, 255, 255, 0.34);
+  border: 1px solid color-mix(in oklab, var(--accent-on), transparent 66%);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.12);
+  background: color-mix(in oklab, var(--accent-on), transparent 88%);
   color: var(--accent-on);
   font-size: var(--text-sm);
   font-weight: 500;
@@ -369,12 +369,17 @@
 }
 
 .landing-cta__demo:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.2);
+  background: color-mix(in oklab, var(--accent-on), transparent 80%);
 }
 
 .landing-cta__demo:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px #ffffff;
+  box-shadow: 0 0 0 2px var(--accent-on);
+}
+
+.landing-cta__demo:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
 }
 
 .landing-cta__mark {
@@ -383,9 +388,9 @@
   height: 112px;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  border: 1px solid color-mix(in oklab, var(--accent-on), transparent 78%);
   border-radius: var(--radius-xl);
-  background: rgba(255, 255, 255, 0.1);
+  background: color-mix(in oklab, var(--accent-on), transparent 90%);
   color: var(--accent-on);
 }
 

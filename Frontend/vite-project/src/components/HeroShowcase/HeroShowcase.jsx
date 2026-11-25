@@ -83,11 +83,21 @@ export default function HeroShowcase({ onLaunchDemo, demoLoading = false }) {
   const activeTab = SHOWCASE_TABS[activeIndex] || SHOWCASE_TABS[0];
 
   const handleTabKeyDown = (event, index) => {
-    if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
+    let nextIndex = null;
+    if (event.key === 'ArrowRight') {
+      nextIndex = (index + 1) % SHOWCASE_TABS.length;
+    } else if (event.key === 'ArrowLeft') {
+      nextIndex = (index - 1 + SHOWCASE_TABS.length) % SHOWCASE_TABS.length;
+    } else if (event.key === 'Home') {
+      nextIndex = 0;
+    } else if (event.key === 'End') {
+      nextIndex = SHOWCASE_TABS.length - 1;
+    }
+    if (nextIndex === null) return;
     event.preventDefault();
-    const delta = event.key === 'ArrowRight' ? 1 : -1;
-    const nextIndex = (index + delta + SHOWCASE_TABS.length) % SHOWCASE_TABS.length;
     setActiveIndex(nextIndex);
+    const tabs = event.currentTarget.parentElement?.querySelectorAll('[role="tab"]');
+    tabs?.[nextIndex]?.focus();
   };
 
   return (

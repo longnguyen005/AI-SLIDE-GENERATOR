@@ -17,6 +17,10 @@ const sidebarCssRaw = fs.readFileSync(
   path.resolve('src/components/SideBar/SideBar.css'),
   'utf8'
 );
+const landingCssRaw = fs.readFileSync(
+  path.resolve('src/pages/LandingPage/LandingPage.css'),
+  'utf8'
+);
 
 function ThemeProbe() {
   const { theme, isDark } = useTheme();
@@ -158,11 +162,42 @@ describe('DeckAI × Open Design UI Refactor', () => {
     const showcase = screen.getByRole('region', { name: /interactive workspace preview/i });
     expect(showcase.querySelector('.slide-canvas--title')).toBeInTheDocument();
 
+    // Multi-step keyboard roving tabIndex navigation across HeroShowcase tabs
+    const coverTab = within(showcase).getByRole('tab', { name: /cover/i });
+    const sectionTab = within(showcase).getByRole('tab', { name: /section break/i });
+    const insightsTab = within(showcase).getByRole('tab', { name: /key insights/i });
+
+    coverTab.focus();
+    expect(document.activeElement).toBe(coverTab);
+
+    fireEvent.keyDown(document.activeElement, { key: 'ArrowRight' });
+    expect(document.activeElement).toBe(sectionTab);
+    expect(sectionTab).toHaveAttribute('aria-selected', 'true');
+    expect(showcase.querySelector('.slide-canvas--section')).toBeInTheDocument();
+
+    fireEvent.keyDown(document.activeElement, { key: 'ArrowRight' });
+    expect(document.activeElement).toBe(insightsTab);
+    expect(insightsTab).toHaveAttribute('aria-selected', 'true');
+    expect(showcase.querySelector('.slide-canvas--content')).toBeInTheDocument();
+
+    fireEvent.keyDown(document.activeElement, { key: 'End' });
+    expect(document.activeElement).toBe(
+      within(showcase).getByRole('tab', { name: /executive summary/i })
+    );
+    expect(showcase.querySelector('.slide-canvas--summary')).toBeInTheDocument();
+
+    fireEvent.keyDown(document.activeElement, { key: 'Home' });
+    expect(document.activeElement).toBe(coverTab);
+    expect(showcase.querySelector('.slide-canvas--title')).toBeInTheDocument();
+
     fireEvent.click(within(showcase).getByRole('tab', { name: /side-by-side/i }));
     expect(showcase.querySelector('.slide-canvas--two_column')).toBeInTheDocument();
 
     fireEvent.click(within(showcase).getByRole('tab', { name: /executive summary/i }));
     expect(showcase.querySelector('.slide-canvas--summary')).toBeInTheDocument();
+
+    // LandingPage.css uses tokens.css custom properties exclusively with zero raw hex literals
+    expect(landingCssRaw).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
   });
 
   it('deduplicates LoginPage Back to home, syncs theme across AuthPage, and preserves RegisterPage input on mismatch error', () => {
