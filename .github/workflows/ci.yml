@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  backend:
+    name: Backend Checks & Tests
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval db.runCommand({ping:1}).ok"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: Backend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: Backend/package-lock.json
+
+      - name: Install Backend dependencies
+        run: npm ci
+
+      - name: Check Backend syntax
+        run: npm run check
+
+      - name: Run Backend integration & hygiene tests
+        env:
+          TEST_MONGO_URI: mongodb://127.0.0.1:27017/deckai_ci_test
+          JWT_SECRET: ci-test-jwt-secret
+        run: npm test
+
+  frontend:
+    name: Frontend Lint, Tests & Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Frontend/vite-project
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: Frontend/vite-project/package-lock.json
+
+      - name: Install Frontend dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run Frontend Vitest suite
+        run: npm test
+
+      - name: Build production Vite bundle
+        run: npm run build

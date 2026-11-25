@@ -1,8 +1,4 @@
-import { execFileSync } from 'node:child_process';
-import fs from 'node:fs';
-import path from 'node:path';
 import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../src/app.js';
@@ -10,52 +6,18 @@ import * as envModule from '../src/config/env.js';
 import { errorMiddleware } from '../src/middleware/errorMiddleware.js';
 import { SlideVersion } from '../src/models/SlideVersion.model.js';
 import * as paramsModule from '../src/utils/params.js';
-
-function getMongoMemoryOptions() {
-    if (process.env.MONGOMS_SYSTEM_BINARY) {
-        return { binary: { systemBinary: process.env.MONGOMS_SYSTEM_BINARY } };
-    }
-    if (process.platform === 'win32') {
-        const baseDir = 'C:\\Program Files\\MongoDB\\Server';
-        if (fs.existsSync(baseDir)) {
-            const versions = fs.readdirSync(baseDir).sort().reverse();
-            for (const ver of versions) {
-                const candidate = path.join(baseDir, ver, 'bin', 'mongod.exe');
-                if (fs.existsSync(candidate)) {
-                    const out = execFileSync(candidate, ['--version'], { encoding: 'utf8' });
-                    const detectedVersion = out.match(/db version v(\d+\.\d+\.\d+)/)?.[1];
-                    return {
-                        binary: {
-                            systemBinary: candidate,
-                            ...(detectedVersion ? { version: detectedVersion } : {})
-                        }
-                    };
-                }
-            }
-        }
-    }
-    return {};
-}
-
-let mongoServer;
+import { clearTestDb, connectTestDb, disconnectTestDb } from './helpers/testDb.js';
 
 beforeAll(async () => {
-    mongoServer = await MongoMemoryServer.create(getMongoMemoryOptions());
-    await mongoose.connect(mongoServer.getUri());
+    await connectTestDb('auth');
 }, 30000);
 
 afterAll(async () => {
-    await mongoose.disconnect();
-    if (mongoServer) {
-        await mongoServer.stop();
-    }
+    await disconnectTestDb();
 });
 
 beforeEach(async () => {
-    const collections = mongoose.connection.collections;
-    for (const key of Object.keys(collections)) {
-        await collections[key].deleteMany({});
-    }
+    await clearTestDb();
 });
 
 async function registerUser(overrides = {}) {

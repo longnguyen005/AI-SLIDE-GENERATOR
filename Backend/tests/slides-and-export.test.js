@@ -1,9 +1,5 @@
-import { execFileSync } from 'node:child_process';
-import fs from 'node:fs';
-import path from 'node:path';
 import zlib from 'node:zlib';
 import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
 import request from 'supertest';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { app } from '../src/app.js';
@@ -11,32 +7,7 @@ import { Deck } from '../src/models/Deck.model.js';
 import { Slide } from '../src/models/Slide.model.js';
 import { SlideVersion } from '../src/models/SlideVersion.model.js';
 import * as geminiService from '../src/services/gemini.service.js';
-
-function getMongoMemoryOptions() {
-    if (process.env.MONGOMS_SYSTEM_BINARY) {
-        return { binary: { systemBinary: process.env.MONGOMS_SYSTEM_BINARY } };
-    }
-    if (process.platform === 'win32') {
-        const baseDir = 'C:\\Program Files\\MongoDB\\Server';
-        if (fs.existsSync(baseDir)) {
-            const versions = fs.readdirSync(baseDir).sort().reverse();
-            for (const ver of versions) {
-                const candidate = path.join(baseDir, ver, 'bin', 'mongod.exe');
-                if (fs.existsSync(candidate)) {
-                    const out = execFileSync(candidate, ['--version'], { encoding: 'utf8' });
-                    const detectedVersion = out.match(/db version v(\d+\.\d+\.\d+)/)?.[1];
-                    return {
-                        binary: {
-                            systemBinary: candidate,
-                            ...(detectedVersion ? { version: detectedVersion } : {})
-                        }
-                    };
-                }
-            }
-        }
-    }
-    return {};
-}
+import { clearTestDb, connectTestDb, disconnectTestDb } from './helpers/testDb.js';
 
 function readZipEntries(buffer) {
     let eocdOffset = -1;
@@ -91,25 +62,16 @@ function binaryParser(res, callback) {
     res.on('end', () => callback(null, Buffer.concat(chunks)));
 }
 
-let mongoServer;
-
 beforeAll(async () => {
-    mongoServer = await MongoMemoryServer.create(getMongoMemoryOptions());
-    await mongoose.connect(mongoServer.getUri());
+    await connectTestDb('slides');
 }, 30000);
 
 afterAll(async () => {
-    await mongoose.disconnect();
-    if (mongoServer) {
-        await mongoServer.stop();
-    }
+    await disconnectTestDb();
 });
 
 beforeEach(async () => {
-    const collections = mongoose.connection.collections;
-    for (const key of Object.keys(collections)) {
-        await collections[key].deleteMany({});
-    }
+    await clearTestDb();
 });
 
 afterEach(() => {
