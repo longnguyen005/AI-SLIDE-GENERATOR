@@ -1,15 +1,17 @@
 import { Router } from 'express';
-import rateLimit from 'express-rate-limit';
 import { deleteSlide, regenerateSlide, updateSlide, versions } from '../controllers/slide.controller.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { validateBody } from '../middleware/validateRequest.js';
-import { validateRegenerate, validateSlide } from '../validators/common.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { regenerateSchema, slideUpdateSchema } from '../validators/schemas.js';
+
 const router = Router();
-const aiLimit = rateLimit({ windowMs: 15 * 60 * 1000, limit: 30 });
+
 router.use(authMiddleware);
-router.patch('/:slideId', validateBody(validateSlide), asyncHandler(updateSlide));
+
+router.patch('/:slideId', validateBody(slideUpdateSchema), asyncHandler(updateSlide));
 router.delete('/:slideId', asyncHandler(deleteSlide));
-router.post('/:slideId/regenerate', aiLimit, validateBody(validateRegenerate), asyncHandler(regenerateSlide));
+router.post('/:slideId/regenerate', validateBody(regenerateSchema), asyncHandler(regenerateSlide));
 router.get('/:slideId/versions', asyncHandler(versions));
+
 export default router;

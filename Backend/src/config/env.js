@@ -1,20 +1,37 @@
 import dotenv from 'dotenv';
+
 dotenv.config();
-export const env = {
-    port: Number(process.env.PORT || 5000),
-    mongoUri: process.env.MONGODB_URI || 'mongodb://localhost:27017/deckai',
-    jwtSecret: process.env.JWT_SECRET || 'dev-secret-change-me',
-    corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173',
-    geminiApiKeys: (process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || '')
+
+function splitCsv(value) {
+    return String(value || '')
         .split(',')
-        .map((k) => k.trim())
-        .filter(Boolean),
-    geminiModels: (process.env.GEMINI_MODELS || 'gemini-2.0-flash,gemini-2.0-flash-lite,gemini-2.5-flash-lite')
-        .split(',')
-        .map((m) => m.trim())
-        .filter(Boolean),
-    dnsServers: (process.env.DNS_SERVERS || '')
-        .split(',')
-        .map((server) => server.trim())
-        .filter(Boolean)
-};
+        .map((item) => item.trim())
+        .filter(Boolean);
+}
+
+export function loadEnv(rawEnv = process.env) {
+    const nodeEnv = rawEnv.NODE_ENV || 'development';
+    const rawJwtSecret = rawEnv.JWT_SECRET?.trim();
+
+    if (nodeEnv === 'production' && (!rawJwtSecret || rawJwtSecret === 'dev-secret-change-me')) {
+        throw new Error('JWT_SECRET must be set to a strong non-default secret in production');
+    }
+
+    const corsOrigins = splitCsv(rawEnv.CORS_ORIGINS || rawEnv.CORS_ORIGIN || 'http://localhost:5173');
+
+    return {
+        nodeEnv,
+        port: Number(rawEnv.PORT || 5000),
+        mongoUri: rawEnv.MONGODB_URI || 'mongodb://localhost:27017/deckai',
+        jwtSecret: rawJwtSecret || 'dev-secret-change-me',
+        corsOrigin: corsOrigins[0] || 'http://localhost:5173',
+        corsOrigins,
+        geminiApiKeys: splitCsv(rawEnv.GEMINI_API_KEYS || rawEnv.GEMINI_API_KEY || ''),
+        geminiModels: splitCsv(
+            rawEnv.GEMINI_MODELS || 'gemini-2.0-flash,gemini-2.0-flash-lite,gemini-2.5-flash-lite'
+        ),
+        dnsServers: splitCsv(rawEnv.DNS_SERVERS || '')
+    };
+}
+
+export const env = loadEnv(process.env);
