@@ -373,4 +373,99 @@ describe('Task 4: Connected EditorPage, 5-Layout SlideCanvas & Workspace Polish'
     expect(within(accountDialog).getByText(/Mar 1, 2026/i)).toBeInTheDocument();
     expect(globalThis.fetch).not.toHaveBeenCalled();
   });
+
+  it('surfaces failed deck loads and 0-slide add errors as alerts instead of misreporting an empty deck', async () => {
+    const { unmount } = render(
+      <MemoryRouter initialEntries={['/editor/missing-deck-404']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    const loadAlert = await screen.findByRole('alert');
+    expect(loadAlert).toHaveTextContent(/deck not found/i);
+    expect(screen.queryByText(/no slides in this deck yet/i)).not.toBeInTheDocument();
+    expect(within(loadAlert).getByRole('link', { name: /back to dashboard/i })).toHaveAttribute(
+      'href',
+      '/dashboard'
+    );
+
+    unmount();
+
+    // Also verify 0-slide deck shows error alert if Add slide fails
+    const { deck: emptyDeck } = await api.createDeck({
+      topic: 'Zero Slide Draft Deck',
+      slideCount: 3,
+    });
+    vi.spyOn(api, 'createSlide').mockRejectedValueOnce(
+      new Error('Failed to create initial slide')
+    );
+
+    render(
+      <MemoryRouter initialEntries={[`/editor/${emptyDeck._id}`]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText(/no slides in this deck yet/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /add slide/i }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      /failed to create initial slide/i
+    );
+  });
+
+  it('renders Version history fetch and restore errors inside the dialog without showing empty-history copy', async () => {
+    const getVersionsSpy = vi
+      .spyOn(api, 'getSlideVersions')
+      .mockRejectedValueOnce(new Error('Version service unavailable'));
+
+    render(
+      <MemoryRouter initialEntries={['/editor/demo-deck-ready']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(
+      await screen.findByText('Enterprise AI Copilots: 2026 Rollout Blueprint')
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByRole('button', { name: /version history/i })[0]);
+
+    const dialogAfterFetchFail = await screen.findByRole('dialog', {
+      name: /version history/i,
+    });
+    expect(await within(dialogAfterFetchFail).findByRole('alert')).toHaveTextContent(
+      /version service unavailable/i
+    );
+    expect(
+      within(dialogAfterFetchFail).queryByText(/no saved snapshots for this slide yet/i)
+    ).not.toBeInTheDocument();
+
+    // Close modal, restore real getSlideVersions, select Slide 3, and verify restore error inside modal
+    fireEvent.click(within(dialogAfterFetchFail).getByRole('button', { name: /close version history/i }));
+    getVersionsSpy.mockRestore();
+
+    vi.spyOn(api, 'restoreSlideVersion').mockRejectedValueOnce(
+      new Error('Snapshot restore conflict')
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: /Targeted Knowledge Workflows Deliver 34% Faster Cycle Times/i,
+      })
+    );
+    fireEvent.click(screen.getAllByRole('button', { name: /version history/i })[0]);
+
+    const dialogForRestoreFail = await screen.findByRole('dialog', {
+      name: /version history/i,
+    });
+    const restoreBtn = await within(dialogForRestoreFail).findByRole('button', {
+      name: /restore/i,
+    });
+    fireEvent.click(restoreBtn);
+
+    expect(await within(dialogForRestoreFail).findByRole('alert')).toHaveTextContent(
+      /snapshot restore conflict/i
+    );
+  });
 });

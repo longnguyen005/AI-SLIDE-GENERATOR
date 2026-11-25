@@ -59,6 +59,7 @@ export default function EditorPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [versionModalOpen, setVersionModalOpen] = useState(false);
   const [versions, setVersions] = useState([]);
+  const [versionError, setVersionError] = useState('');
   const [loadingVersions, setLoadingVersions] = useState(false);
   const [restoringVersionId, setRestoringVersionId] = useState('');
 
@@ -83,6 +84,10 @@ export default function EditorPage() {
         setDraft(null);
       } catch (error) {
         if (active) {
+          setDeck(null);
+          setSlides([]);
+          setActiveSlideId(null);
+          setDraft(null);
           setErrorMessage(error.message || 'Unable to load deck editor.');
         }
       } finally {
@@ -294,22 +299,29 @@ export default function EditorPage() {
     if (!activeSlide) return;
     setVersionModalOpen(true);
     setLoadingVersions(true);
-    setErrorMessage('');
+    setVersionError('');
+    setVersions([]);
     try {
       const result = await api.getSlideVersions(activeSlide._id);
       setVersions(result.versions || []);
     } catch (error) {
-      setErrorMessage(error.message || 'Failed to load slide versions.');
+      setVersionError(error.message || 'Failed to load slide versions.');
       setVersions([]);
     } finally {
       setLoadingVersions(false);
     }
   };
 
+  const closeVersionHistory = () => {
+    if (restoringVersionId) return;
+    setVersionModalOpen(false);
+    setVersionError('');
+  };
+
   const handleRestoreVersion = async (versionId) => {
     if (!activeSlide || restoringVersionId) return;
     setRestoringVersionId(versionId);
-    setErrorMessage('');
+    setVersionError('');
     try {
       const result = await api.restoreSlideVersion(activeSlide._id, versionId);
       setSlides((prev) =>
@@ -317,9 +329,10 @@ export default function EditorPage() {
       );
       setDraft(null);
       setVersionModalOpen(false);
+      setVersionError('');
       setToast('Restored slide snapshot from version history.');
     } catch (error) {
-      setErrorMessage(error.message || 'Failed to restore version.');
+      setVersionError(error.message || 'Failed to restore version.');
     } finally {
       setRestoringVersionId('');
     }
@@ -365,7 +378,9 @@ export default function EditorPage() {
               <small>
                 {loading
                   ? 'Loading slides...'
-                  : `${slides.length} ${slides.length === 1 ? 'slide' : 'slides'} • ${isCurrentDraft ? 'Unsaved edits' : 'All changes saved'}`}
+                  : !deck
+                    ? 'Presentation unavailable'
+                    : `${slides.length} ${slides.length === 1 ? 'slide' : 'slides'} • ${isCurrentDraft ? 'Unsaved edits' : 'All changes saved'}`}
               </small>
             </div>
           </div>
@@ -406,8 +421,25 @@ export default function EditorPage() {
           </div>
         )}
 
-        {!loading && !slides.length && (
+        {!loading && !deck && (
+          <div className="editor-state-card editor-state-card--error" role="alert">
+            <strong>Unable to load presentation</strong>
+            <p>{errorMessage || 'Deck not found.'}</p>
+            <div className="editor-state-card__actions">
+              <Button to="/dashboard" variant="outline" icon="arrowLeft">
+                Back to dashboard
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {!loading && deck && !slides.length && (
           <div className="editor-state-card">
+            {errorMessage && (
+              <div className="editor-toast editor-toast--error" role="alert">
+                {errorMessage}
+              </div>
+            )}
             <strong>No slides in this deck yet</strong>
             <p>Generate slides from your outline or add a blank slide to begin editing.</p>
             <div className="editor-state-card__actions">
@@ -649,7 +681,7 @@ export default function EditorPage() {
         <div
           className="sidebar-popup-backdrop"
           role="presentation"
-          onMouseDown={() => !restoringVersionId && setVersionModalOpen(false)}
+          onMouseDown={closeVersionHistory}
         >
           <section
             className="sidebar-popup editor-version-modal"
@@ -669,7 +701,7 @@ export default function EditorPage() {
               </div>
               <button
                 type="button"
-                onClick={() => setVersionModalOpen(false)}
+                onClick={closeVersionHistory}
                 disabled={Boolean(restoringVersionId)}
                 aria-label="Close version history"
               >
@@ -678,11 +710,20 @@ export default function EditorPage() {
             </header>
 
             <div className="sidebar-popup__body editor-version-modal__body">
+              {versionError && (
+                <div
+                  className="editor-toast editor-toast--error editor-version-modal__error"
+                  role="alert"
+                >
+                  {versionError}
+                </div>
+              )}
+
               {loadingVersions && (
                 <p className="editor-version-modal__empty">Loading version history...</p>
               )}
 
-              {!loadingVersions && versions.length === 0 && (
+              {!loadingVersions && !versionError && versions.length === 0 && (
                 <p className="editor-version-modal__empty">
                   No saved snapshots for this slide yet. Regenerate with AI to automatically
                   archive the current slide before updating it.

@@ -107,6 +107,14 @@
   box-shadow: var(--shadow);
 }
 
+.editor-state-card--error {
+  border-color: rgba(239, 68, 68, 0.42);
+}
+
+:root[data-theme="dark"] .editor-state-card--error {
+  border-color: rgba(248, 113, 113, 0.45);
+}
+
 .editor-state-card strong {
   font-size: 22px;
 }
@@ -280,6 +288,17 @@
   border-color: rgba(239, 68, 68, 0.38);
   background: rgba(239, 68, 68, 0.1);
   color: var(--danger);
+}
+
+:root[data-theme="dark"] .editor-toast.editor-toast--error {
+  border-color: rgba(248, 113, 113, 0.48);
+  background: rgba(127, 29, 29, 0.38);
+  color: #fca5a5;
+}
+
+.editor-version-modal__error {
+  width: 100%;
+  margin-bottom: 0;
 }
 
 .editor-canvas-card {
