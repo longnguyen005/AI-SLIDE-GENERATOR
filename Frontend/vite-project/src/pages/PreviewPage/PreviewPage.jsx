@@ -97,7 +97,16 @@ export default function PreviewPage() {
     <div className="page-shell preview-page">
       <Sidebar active="preview" />
       <main className="page-content preview-main">
-        <Topbar title="Presentation Preview" />
+        <Topbar
+          title="Presentation Preview"
+          action={
+            deckId ? (
+              <Button to={`/editor/${deckId}`} variant="outline" icon="edit">
+                Edit Slides
+              </Button>
+            ) : null
+          }
+        />
 
         {message && <div className="preview-message">{message}</div>}
         {loading && <div className="preview-empty">Loading slides...</div>}

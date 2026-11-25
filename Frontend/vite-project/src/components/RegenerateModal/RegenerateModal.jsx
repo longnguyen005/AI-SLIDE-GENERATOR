@@ -41,13 +41,13 @@ export default function RegenerateModal({ open, onClose, onRegenerate }) {
         <header className="regenerate-modal__header">
           <span className="regenerate-modal__icon"><Icon name="wand" size={19} /></span>
           <h2 id="regenerate-title">Regenerate this slide</h2>
-          <button onClick={handleClose} disabled={loading} aria-label="Đóng"><Icon name="close" size={20} /></button>
+          <button type="button" onClick={handleClose} disabled={loading} aria-label="Close"><Icon name="close" size={20} /></button>
         </header>
         <div className="regenerate-modal__body">
           {error && <div className="regenerate-modal__error">{error}</div>}
           <div className="regenerate-modal__presets">
             {presets.map((preset) => (
-              <button key={preset} className={selected === preset ? 'is-selected' : ''} onClick={() => setSelected(preset)} disabled={loading}>{preset}</button>
+              <button type="button" key={preset} className={selected === preset ? 'is-selected' : ''} onClick={() => setSelected(preset)} disabled={loading}>{preset}</button>
             ))}
           </div>
           <label htmlFor="custom-instruction">Custom instruction</label>
@@ -60,8 +60,8 @@ export default function RegenerateModal({ open, onClose, onRegenerate }) {
           />
         </div>
         <footer className="regenerate-modal__footer">
-          <button className="regenerate-modal__cancel" onClick={handleClose} disabled={loading}>Cancel</button>
-          <Button icon="wand" onClick={submit} disabled={loading}>{loading ? 'Regenerating...' : 'Regenerate'}</Button>
+          <button type="button" className="regenerate-modal__cancel" onClick={handleClose} disabled={loading}>Cancel</button>
+          <Button type="button" icon="wand" onClick={submit} disabled={loading}>{loading ? 'Regenerating...' : 'Regenerate'}</Button>
         </footer>
       </section>
     </div>

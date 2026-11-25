@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Sidebar from '../../components/SideBar/SideBar';
 import Topbar from '../../components/Topbar/Topbar';
 import Button from '../../components/Button/Button';
@@ -11,6 +12,8 @@ import './DashboardPage.css';
 export default function DashboardPage() {
   const [decks, setDecks] = useState([]);
   const [exportCount, setExportCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [deletingId, setDeletingId] = useState('');
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -21,7 +24,7 @@ export default function DashboardPage() {
       try {
         const [decksResult, summaryResult] = await Promise.all([
           api.getDecks(),
-          api.getSummary().catch(() => ({ totalExports: 0 }))
+          api.getSummary().catch(() => ({ totalExports: 0 })),
         ]);
         if (active) {
           setDecks(decksResult.decks || []);
@@ -40,8 +43,41 @@ export default function DashboardPage() {
     };
   }, []);
 
-  const readyCount = useMemo(() => decks.filter((deck) => deck.status === 'ready').length, [decks]);
-  const plannedSlides = useMemo(() => decks.reduce((total, deck) => total + Number(deck.slideCount || 0), 0), [decks]);
+  const readyCount = useMemo(
+    () => decks.filter((deck) => deck.status === 'ready').length,
+    [decks]
+  );
+  const plannedSlides = useMemo(
+    () => decks.reduce((total, deck) => total + Number(deck.slideCount || 0), 0),
+    [decks]
+  );
+
+  const filteredDecks = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return decks;
+    return decks.filter((deck) => {
+      const haystack = [deck.title, deck.topic, deck.description, deck.tone, deck.status]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [decks, searchQuery]);
+
+  const handleDeleteDeck = async (deck) => {
+    const deckId = deck._id || deck.id;
+    if (!deckId || deletingId) return;
+    setDeletingId(deckId);
+    setNotice('');
+    try {
+      await api.deleteDeck(deckId);
+      setDecks((prev) => prev.filter((item) => (item._id || item.id) !== deckId));
+    } catch (error) {
+      setNotice(error.message || 'Failed to delete deck.');
+    } finally {
+      setDeletingId('');
+    }
+  };
 
   return (
     <div className="page-shell dashboard-page">
@@ -49,9 +85,17 @@ export default function DashboardPage() {
       <main className="page-content dashboard-main">
         <Topbar
           title="Presentations"
-          subtitle={loading ? 'Loading your workspace...' : `${decks.length} decks in your workspace`}
+          subtitle={
+            loading ? 'Loading your workspace...' : `${decks.length} decks in your workspace`
+          }
           searchPlaceholder="Search decks..."
-          action={<Button to="/create" icon="sparkles">New deck</Button>}
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          action={
+            <Button to="/create" icon="sparkles">
+              New deck
+            </Button>
+          }
         />
 
         {notice && <div className="dashboard-message">{notice}</div>}
@@ -66,22 +110,50 @@ export default function DashboardPage() {
         <section className="dashboard-section">
           <div className="dashboard-section__heading">
             <h2>Recent decks</h2>
-            <a href="/dashboard">View all <Icon name="arrowRight" size={16} /></a>
+            <span className="dashboard-section__count">
+              {searchQuery.trim()
+                ? `${filteredDecks.length} of ${decks.length} matching`
+                : `${decks.length} total`}
+            </span>
           </div>
           <div className="dashboard-decks">
             {loading && <div className="dashboard-empty">Loading decks...</div>}
-            {!loading && decks.map((deck, index) => <DeckCard key={deck._id} deck={deck} selected={index === 0} />)}
+
+            {!loading &&
+              filteredDecks.map((deck, index) => (
+                <DeckCard
+                  key={deck._id}
+                  deck={deck}
+                  selected={index === 0 && !searchQuery.trim()}
+                  onDelete={handleDeleteDeck}
+                  deleting={deletingId === deck._id}
+                />
+              ))}
+
+            {!loading && decks.length > 0 && filteredDecks.length === 0 && (
+              <div className="dashboard-empty">
+                <strong>No matching decks</strong>
+                <small>No presentations matched &ldquo;{searchQuery.trim()}&rdquo;.</small>
+                <Button type="button" variant="outline" onClick={() => setSearchQuery('')}>
+                  Clear search
+                </Button>
+              </div>
+            )}
+
             {!loading && !decks.length && (
               <div className="dashboard-empty">
                 <strong>No decks yet</strong>
                 <small>Create your first AI presentation to see it here.</small>
               </div>
             )}
-            <a href="/create" className="new-deck-card">
-              <span><Icon name="plus" size={34} /></span>
+
+            <Link to="/create" className="new-deck-card">
+              <span>
+                <Icon name="plus" size={34} />
+              </span>
               <strong>Start from scratch</strong>
               <small>Create a blank canvas</small>
-            </a>
+            </Link>
           </div>
         </section>
       </main>

@@ -5,6 +5,7 @@ import ProgressSteps from '../../components/ProgressSteps/ProgressSteps';
 import OutlineCard from '../../components/OutlineCard/OutlineCard';
 import Button from '../../components/Button/Button';
 import Icon from '../../components/Icon/Icon';
+import { useAuth } from '../../context/AuthContext';
 import { api } from '../../service/apiClient';
 import './OutlinePage.css';
 
@@ -16,19 +17,19 @@ function initials(name = '') {
 
 function formatDate(value) {
   if (!value) return 'Unknown';
-  return new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
+  return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
 }
 
 export default function OutlinePage() {
   const navigate = useNavigate();
   const { deckId } = useParams();
+  const { user } = useAuth();
   const [sections, setSections] = useState([]);
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(true);
   const [generatingSlides, setGeneratingSlides] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
   const [draftDirty, setDraftDirty] = useState(false);
-  const [user, setUser] = useState(null);
   const [panel, setPanel] = useState('');
   const [confirmGenerate, setConfirmGenerate] = useState(false);
 
@@ -65,24 +66,6 @@ export default function OutlinePage() {
       active = false;
     };
   }, [deckId]);
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadUser() {
-      try {
-        const result = await api.me();
-        if (active) setUser(result.user);
-      } catch {
-        if (active) setUser(null);
-      }
-    }
-
-    loadUser();
-    return () => {
-      active = false;
-    };
-  }, []);
 
   const saveDraft = async () => {
     if (!deckId || !draftDirty) return;

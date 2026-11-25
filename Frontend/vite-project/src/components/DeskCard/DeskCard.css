@@ -1,24 +1,35 @@
 .deck-card {
   position: relative;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   padding: 14px;
-  border: 1px solid #e4e3ee;
+  border: 1px solid var(--border);
   border-radius: 22px;
-  background: #fff;
+  background: var(--surface);
   box-shadow: 0 8px 22px rgba(36, 30, 90, 0.05);
   transition:
     transform 0.2s ease,
     border-color 0.2s ease,
     box-shadow 0.2s ease;
 }
+
 .deck-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 16px 30px rgba(36, 30, 90, 0.11);
 }
+
 .deck-card--selected {
-  border: 2px solid #3427d2;
+  border: 2px solid var(--primary);
   box-shadow: 0 10px 24px rgba(52, 39, 210, 0.16);
 }
+
+.deck-card__main {
+  display: block;
+  min-width: 0;
+}
+
 .deck-card__check {
   position: absolute;
   z-index: 2;
@@ -30,18 +41,20 @@
   place-items: center;
   border-radius: 50%;
   color: #fff;
-  background: #4338ca;
-  border: 3px solid #fff;
+  background: var(--primary);
+  border: 3px solid var(--surface);
 }
+
 .deck-card__cover {
   position: relative;
-  height: 166px;
+  height: 162px;
   overflow: hidden;
   border-radius: 16px;
   display: grid;
   place-items: center;
   color: rgba(255, 255, 255, 0.5);
 }
+
 .deck-card__cover::before {
   content: "";
   position: absolute;
@@ -52,22 +65,28 @@
     transparent 22%
   );
 }
+
 .deck-card__cover--purple {
   background: linear-gradient(135deg, #3121df, #7939f3);
 }
+
 .deck-card__cover--blue {
   background: linear-gradient(135deg, #4f46e5, #2563eb);
 }
+
 .deck-card__cover--pink {
   background: linear-gradient(135deg, #8b2ee8, #ec4899);
 }
+
 .deck-card__cover--dark {
   background: linear-gradient(135deg, #10172f, #252f6c);
 }
+
 .deck-card__cover-icon {
   position: relative;
   z-index: 1;
 }
+
 .deck-card__slides {
   position: absolute;
   top: 14px;
@@ -82,31 +101,110 @@
   font-size: 11px;
   font-weight: 800;
 }
+
 .deck-card h3 {
-  margin: 17px 8px 5px;
+  margin: 16px 8px 6px;
   font-size: 18px;
+  line-height: 1.3;
 }
+
 .deck-card p {
-  margin: 0 8px 16px;
-  color: #747184;
-  font-style: italic;
+  margin: 0 8px 14px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
+
+.deck-card__footer {
+  display: grid;
+  gap: 12px;
+  padding: 10px 8px 4px;
+  border-top: 1px solid var(--border);
+}
+
 .deck-card__tags {
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
-  padding: 0 8px 8px;
 }
+
 .deck-card__tags span {
-  padding: 6px 11px;
+  padding: 5px 10px;
   border-radius: 999px;
-  background: #eef0ff;
+  background: var(--primary-soft);
   color: #4a4567;
   text-transform: uppercase;
   font-size: 10px;
   font-weight: 800;
 }
-.deck-card__tags span:first-child {
+
+.deck-card__tags span.is-ready {
   background: #dcfce7;
   color: #15803d;
+}
+
+.deck-card__tags span.is-draft {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+:root[data-theme="dark"] .deck-card__tags span {
+  background: #252849;
+  color: #cbd5e1;
+}
+
+:root[data-theme="dark"] .deck-card__tags span.is-ready {
+  background: rgba(22, 163, 74, 0.2);
+  color: #86efac;
+}
+
+:root[data-theme="dark"] .deck-card__tags span.is-draft {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fcd34d;
+}
+
+.deck-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.deck-card__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface-alt);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.deck-card__action:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.deck-card__action--danger {
+  margin-left: auto;
+  color: var(--danger);
+}
+
+.deck-card__action--danger:hover:not(:disabled) {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.deck-card__action:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
