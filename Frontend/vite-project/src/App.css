@@ -123,6 +123,11 @@ img {
 }
 
 /* ─── Workspace Shell & Primitives ───────────────────────────────────────── */
+.page-shell,
+.editor-page {
+  position: relative;
+}
+
 .page-shell {
   min-height: 100vh;
   display: grid;
