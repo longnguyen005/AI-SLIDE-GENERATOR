@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import Icon from '../Icon/Icon';
 import Logo from '../Logo/Logo';
 import Button from '../Button/Button';
-import { api, clearToken, getToken } from '../../service/apiClient';
+import { useAuth } from '../../context/AuthContext';
 import './SideBar.css';
 
 const navItems = [
@@ -19,55 +19,30 @@ function initials(name = '') {
 
 function formatDate(value) {
   if (!value) return 'Unknown';
-  return new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
+  return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
 }
 
 export default function Sidebar() {
   const navigate = useNavigate();
+  const { user, loading, isBrowserDemo, logout: authLogout } = useAuth();
   const [open, setOpen] = useState(false);
-  const [user, setUser] = useState(null);
-  const [userLoaded, setUserLoaded] = useState(false);
   const [panel, setPanel] = useState('');
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('deckai_theme') === 'dark');
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadUser() {
-      if (!getToken()) {
-        if (active) setUserLoaded(true);
-        return;
-      }
-      try {
-        const result = await api.me();
-        if (active) setUser(result.user);
-      } catch {
-        if (active) setUser(null);
-      } finally {
-        if (active) setUserLoaded(true);
-      }
-    }
-
-    loadUser();
-    return () => {
-      active = false;
-    };
-  }, []);
 
   useEffect(() => {
     document.documentElement.dataset.theme = darkMode ? 'dark' : 'light';
     localStorage.setItem('deckai_theme', darkMode ? 'dark' : 'light');
   }, [darkMode]);
 
-  const displayName = user?.fullName || (userLoaded ? 'Account' : 'Loading account...');
-  const displayEmail = user?.email || (userLoaded ? 'Signed in' : 'Please wait');
-  const displayInitials = useMemo(() => initials(displayName), [displayName]);
+  const displayName = user?.fullName || (!loading ? 'Account' : 'Loading account...');
+  const displayEmail = user?.email || (!loading ? 'Signed in' : 'Please wait');
+  const displayInitials = useMemo(() => initials(user?.fullName || user?.email || ''), [user]);
 
   const togglePanel = (name) => setPanel((value) => (value === name ? '' : name));
   const openPopup = (name) => setPanel(name);
 
-  const logout = () => {
-    clearToken();
+  const handleLogout = () => {
+    authLogout();
     navigate('/');
   };
 
@@ -81,14 +56,14 @@ export default function Sidebar() {
           <Logo subtitle="Cognitive flow" />
           <button type="button" className="workspace-box" onClick={() => togglePanel('workspace')}>
             <span>Workspace</span>
-            <strong>Personal</strong>
+            <strong>{isBrowserDemo ? 'Demo Sandbox' : 'Personal'}</strong>
             <Icon name="chevronDown" size={16} />
           </button>
           {panel === 'workspace' && (
             <div className="sidebar-panel">
-              <strong>Personal Workspace</strong>
+              <strong>{isBrowserDemo ? 'Demo Sandbox Workspace' : 'Personal Workspace'}</strong>
               <small>Owner: {displayName}</small>
-              <small>Status: Active</small>
+              <small>Status: {isBrowserDemo ? 'Browser Sandbox' : 'Active'}</small>
             </div>
           )}
         </div>
@@ -112,7 +87,7 @@ export default function Sidebar() {
         <div className="sidebar__footer">
           <button type="button" className="sidebar__utility sidebar__utility--button" onClick={() => openPopup('settings')}><Icon name="settings" size={20} /> Settings</button>
           <a href="#help" className="sidebar__utility"><Icon name="help" size={20} /> Help Center</a>
-          <button type="button" className="sidebar__utility sidebar__utility--button" onClick={logout}><Icon name="logout" size={20} /> Log out</button>
+          <button type="button" className="sidebar__utility sidebar__utility--button" onClick={handleLogout}><Icon name="logout" size={20} /> Log out</button>
           <button type="button" className="sidebar__profile" onClick={() => openPopup('account')}>
             <span className="avatar avatar--photo">{displayInitials}</span>
             <span><strong>{displayName}</strong><small>{displayEmail}</small></span>

@@ -3,16 +3,19 @@ import { Link, useNavigate } from 'react-router-dom';
 import AuthVisual from '../../components/AuthVisual/AuthVisual';
 import Icon from '../../components/Icon/Icon';
 import Button from '../../components/Button/Button';
-import { api, setToken } from '../../service/apiClient';
+import { useAuth } from '../../context/AuthContext';
+import { api } from '../../service/apiClient';
 import './AuthPage.css';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { loginWithToken, startInstantDemo } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -20,12 +23,25 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const result = await api.login({ email, password });
-      setToken(result.token);
+      await loginWithToken(result.token, result.user);
       navigate('/dashboard');
     } catch (error) {
       setNotice(error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const launchDemo = async () => {
+    setNotice('');
+    setDemoLoading(true);
+    try {
+      await startInstantDemo();
+      navigate('/dashboard');
+    } catch (error) {
+      setNotice(error.message);
+    } finally {
+      setDemoLoading(false);
     }
   };
 
@@ -48,10 +64,13 @@ export default function LoginPage() {
             <button type="button" onClick={() => setShowPassword((value) => !value)} aria-label="Show or hide password"><Icon name="eye" size={21} /></button>
           </div>
 
-          <Button type="submit" className="auth-form__submit" disabled={loading}>{loading ? 'Signing in...' : 'Sign in'}</Button>
+          <Button type="submit" className="auth-form__submit" disabled={loading || demoLoading}>{loading ? 'Signing in...' : 'Sign in'}</Button>
           <div className="auth-divider"><span>or</span></div>
+          <Button type="button" variant="secondary" icon="sparkles" onClick={launchDemo} disabled={loading || demoLoading}>
+            {demoLoading ? 'Launching Demo...' : 'Try Instant Demo'}
+          </Button>
           <Button type="button" variant="outline" onClick={() => navigate('/')}>Back to home</Button>
-          <p className="auth-form__switch">Don't have an account? <Link to="/register">Create account</Link></p>
+          <p className="auth-form__switch">Don&apos;t have an account? <Link to="/register">Create account</Link></p>
         </form>
         <footer className="auth-panel__footer"><a href="#privacy">Privacy Policy</a><a href="#terms">Terms of Service</a></footer>
       </section>

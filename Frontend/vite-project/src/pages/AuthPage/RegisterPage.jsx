@@ -3,15 +3,18 @@ import { Link, useNavigate } from 'react-router-dom';
 import AuthVisual from '../../components/AuthVisual/AuthVisual';
 import Icon from '../../components/Icon/Icon';
 import Button from '../../components/Button/Button';
-import { api, setToken } from '../../service/apiClient';
+import { useAuth } from '../../context/AuthContext';
+import { api } from '../../service/apiClient';
 import './AuthPage.css';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const { loginWithToken, startInstantDemo } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' });
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false);
   const passwordStrength = useMemo(() => Math.min(100, form.password.length * 10), [form.password]);
   const update = (key) => (event) => setForm((value) => ({ ...value, [key]: event.target.value }));
 
@@ -29,14 +32,27 @@ export default function RegisterPage() {
       const result = await api.register({
         fullName: form.name,
         email: form.email,
-        password: form.password
+        password: form.password,
       });
-      setToken(result.token);
+      await loginWithToken(result.token, result.user);
       navigate('/dashboard');
     } catch (error) {
       setNotice(error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const launchDemo = async () => {
+    setNotice('');
+    setDemoLoading(true);
+    try {
+      await startInstantDemo();
+      navigate('/dashboard');
+    } catch (error) {
+      setNotice(error.message);
+    } finally {
+      setDemoLoading(false);
     }
   };
 
@@ -48,7 +64,7 @@ export default function RegisterPage() {
         {notice && <div className="auth-notice">{notice}</div>}
         <form className="auth-form" onSubmit={submit}>
           <h1>Create your account</h1>
-          <p>Get started with DeckAI - it's free</p>
+          <p>Get started with DeckAI - it&apos;s free</p>
           <input aria-label="Full name" value={form.name} onChange={update('name')} placeholder="Full name" required />
           <input aria-label="Email address" type="email" value={form.email} onChange={update('email')} placeholder="Email address" required />
           <div className="password-field">
@@ -58,9 +74,12 @@ export default function RegisterPage() {
           <div className="password-strength"><span style={{ width: `${passwordStrength}%` }} /></div>
           <small className="password-hint">Use 8+ characters with a mix of letters and numbers.</small>
           <input aria-label="Confirm password" type="password" value={form.confirm} onChange={update('confirm')} placeholder="Confirm password" minLength={8} required />
-          <Button type="submit" className="auth-form__submit" iconRight="arrowRight" disabled={loading}>{loading ? 'Creating account...' : 'Create account'}</Button>
+          <Button type="submit" className="auth-form__submit" iconRight="arrowRight" disabled={loading || demoLoading}>{loading ? 'Creating account...' : 'Create account'}</Button>
           <p className="auth-terms">By signing up, you agree to our <a href="#terms">Terms of Service</a></p>
-          <div className="auth-divider" />
+          <div className="auth-divider"><span>or</span></div>
+          <Button type="button" variant="secondary" icon="sparkles" onClick={launchDemo} disabled={loading || demoLoading}>
+            {demoLoading ? 'Launching Demo...' : 'Try Instant Demo'}
+          </Button>
           <Button to="/" variant="outline" icon="back" className="auth-form__back">Back to home</Button>
           <p className="auth-form__switch">Already have an account? <Link to="/login">Sign in</Link></p>
         </form>

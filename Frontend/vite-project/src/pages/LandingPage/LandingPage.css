@@ -10,7 +10,11 @@
 .landing-eyebrow { position: relative; z-index: 1; margin: 0 0 14px; color: #5c50dc; text-transform: uppercase; letter-spacing: .16em; font-size: 12px; font-weight: 900; }
 .landing-hero h1 { position: relative; z-index: 1; margin: 0; font-size: clamp(48px, 7vw, 88px); line-height: .98; letter-spacing: -.06em; }
 .landing-hero__copy { position: relative; z-index: 1; max-width: 720px; margin: 26px auto 24px; color: #656276; font-size: 18px; line-height: 1.65; }
-.landing-hero__actions { position: relative; z-index: 1; display: flex; gap: 12px; }
+.landing-hero__actions { position: relative; z-index: 1; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+.landing-demo-btn { border-color: #c7c4ef; background: rgba(255,255,255,.88); }
+.landing-demo-btn:hover { border-color: #4f46e5; background: #f3f2ff; }
+.landing-hero__subnote { position: relative; z-index: 1; margin: 14px 0 0; color: #6e6a82; font-size: 13px; }
+.landing-hero__error { position: relative; z-index: 1; margin-top: 12px; padding: 8px 14px; border-radius: 9px; border: 1px solid #fecaca; background: #fef2f2; color: #b91c1c; font-size: 13px; }
 .monitor-demo { position: relative; z-index: 1; width: min(760px, 92vw); margin-top: 58px; padding-bottom: 90px; }
 .monitor-demo__screen { position: relative; overflow: hidden; aspect-ratio: 16 / 9; padding: 14px; border-radius: 24px; background: #101827; box-shadow: 0 40px 75px rgba(31, 25, 96, .2); }
 .monitor-demo__screen::after { content: ''; display: block; height: 100%; border-radius: 12px; background: #fff; }
@@ -180,6 +184,26 @@
 :root[data-theme="dark"] .landing-nav .btn--ghost,
 :root[data-theme="dark"] .landing-hero__actions .btn--outline {
   color: #eef2ff;
+}
+
+:root[data-theme="dark"] .landing-demo-btn {
+  background: #252849;
+  border-color: #4b5280;
+}
+
+:root[data-theme="dark"] .landing-demo-btn:hover {
+  background: #2f3461;
+  border-color: #818cf8;
+}
+
+:root[data-theme="dark"] .landing-hero__subnote {
+  color: #a5acc7;
+}
+
+:root[data-theme="dark"] .landing-hero__error {
+  background: rgba(127, 29, 29, 0.35);
+  border-color: #ef4444;
+  color: #fecaca;
 }
 
 @media (max-width: 900px) { .landing-nav { grid-template-columns: 1fr auto; } .landing-nav nav { display: none; } .landing-features__grid { grid-template-columns: repeat(2,1fr); } .workflow-line { grid-template-columns: repeat(2,1fr); } .workflow-line::before { display:none; } }

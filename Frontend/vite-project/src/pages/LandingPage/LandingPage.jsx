@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Logo from '../../components/Logo/Logo';
 import Button from '../../components/Button/Button';
 import FeatureCard from '../../components/FeatureCard/FeatureCard';
 import Icon from '../../components/Icon/Icon';
+import { useAuth } from '../../context/AuthContext';
 import './LandingPage.css';
 
 const features = [
@@ -15,14 +17,32 @@ const features = [
 ];
 
 export default function LandingPage() {
-  const [theme, setTheme] = useState(() => localStorage.getItem('deckai_theme') === 'dark' ? 'dark' : 'light');
+  const navigate = useNavigate();
+  const { startInstantDemo } = useAuth();
+  const [theme, setTheme] = useState(() => (localStorage.getItem('deckai_theme') === 'dark' ? 'dark' : 'light'));
+  const [demoLoading, setDemoLoading] = useState(false);
+  const [demoError, setDemoError] = useState('');
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem('deckai_theme', theme);
   }, [theme]);
 
-  const toggleTheme = () => setTheme((value) => value === 'dark' ? 'light' : 'dark');
+  const toggleTheme = () => setTheme((value) => (value === 'dark' ? 'light' : 'dark'));
+
+  const handleInstantDemo = async () => {
+    if (demoLoading) return;
+    setDemoError('');
+    setDemoLoading(true);
+    try {
+      await startInstantDemo();
+      navigate('/dashboard');
+    } catch (error) {
+      setDemoError(error.message || 'Unable to launch demo workspace.');
+    } finally {
+      setDemoLoading(false);
+    }
+  };
 
   return (
     <div className="landing-page">
@@ -52,13 +72,24 @@ export default function LandingPage() {
           <p className="landing-hero__copy">Transform your ideas into professional pitch decks in seconds. Academic rigor meets creative flow, powered by next-gen AI.</p>
           <div className="landing-hero__actions">
             <Button to="/register" iconRight="arrowRight">Get Started Free</Button>
-            <Button to="/register" variant="outline">See How It Works</Button>
+            <Button
+              type="button"
+              variant="outline"
+              icon="play"
+              className="landing-demo-btn"
+              onClick={handleInstantDemo}
+              disabled={demoLoading}
+            >
+              {demoLoading ? 'Launching Demo...' : 'Try Instant Demo'}
+            </Button>
           </div>
-          <div className="monitor-demo" aria-label="Mô phỏng giao diện DeckAI">
+          <p className="landing-hero__subnote">No signup required — explore pre-built AI decks and export real .pptx slides immediately.</p>
+          {demoError && <div className="landing-hero__error" role="alert">{demoError}</div>}
+          <div className="monitor-demo" aria-label="DeckAI workspace preview">
             <div className="monitor-demo__screen">
               <div className="monitor-demo__sidebar">
                 <span className="monitor-demo__mini-logo" />
-                {[1,2,3,4,5].map((item) => <span key={item} />)}
+                {[1, 2, 3, 4, 5].map((item) => <span key={item} />)}
               </div>
               <div className="monitor-demo__canvas">
                 <div className="monitor-demo__title" />

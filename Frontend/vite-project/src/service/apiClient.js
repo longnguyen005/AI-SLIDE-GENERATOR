@@ -1,34 +1,103 @@
+import {
+  activateBrowserDemo,
+  deactivateBrowserDemo,
+  DEMO_TOKEN,
+  demoStore,
+  isBrowserDemoActive,
+} from './demoStore';
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const DEFAULT_TIMEOUT_MS = 15000;
+const AI_TIMEOUT_MS = 45000;
+const DEMO_LOGIN_TIMEOUT_MS = 6000;
+
+export { isBrowserDemoActive };
 
 export function getToken() {
-  return localStorage.getItem('deckai_token');
+  const stored = localStorage.getItem('deckai_token');
+  if (stored === DEMO_TOKEN && !isBrowserDemoActive()) {
+    localStorage.removeItem('deckai_token');
+    return null;
+  }
+  return stored;
 }
 
 export function setToken(token) {
+  if (token && token !== DEMO_TOKEN) {
+    deactivateBrowserDemo();
+  }
   localStorage.setItem('deckai_token', token);
 }
 
 export function clearToken() {
   localStorage.removeItem('deckai_token');
+  deactivateBrowserDemo();
 }
 
-async function request(path, options = {}) {
-  const token = getToken();
+async function fetchWithTimeout(url, options = {}, timeoutMs = DEFAULT_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const externalSignal = options.signal;
+  const onExternalAbort = () => controller.abort();
 
-  const response = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers || {})
+  if (externalSignal) {
+    if (externalSignal.aborted) {
+      controller.abort();
+    } else {
+      externalSignal.addEventListener('abort', onExternalAbort, { once: true });
     }
-  });
+  }
+
+  const timerId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      const timeoutError = new Error('Request timed out. Please try again.');
+      timeoutError.name = 'AbortError';
+      throw timeoutError;
+    }
+    throw error;
+  } finally {
+    clearTimeout(timerId);
+    if (externalSignal) {
+      externalSignal.removeEventListener('abort', onExternalAbort);
+    }
+  }
+}
+
+async function request(path, options = {}, timeoutMs = DEFAULT_TIMEOUT_MS) {
+  const token = getToken();
+  const { headers: customHeaders, ...fetchOptions } = options;
+
+  const response = await fetchWithTimeout(
+    `${API_URL}${path}`,
+    {
+      ...fetchOptions,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(customHeaders || {}),
+      },
+    },
+    timeoutMs
+  );
+
+  if (response.status === 204) {
+    return undefined;
+  }
 
   const isJson = response.headers.get('content-type')?.includes('application/json');
 
   if (!response.ok) {
     const error = isJson ? await response.json() : { message: 'Request failed' };
-    if (response.status === 401 && !path.startsWith('/auth/login') && !path.startsWith('/auth/register')) {
+    const isAuthAttempt =
+      path.startsWith('/auth/login') ||
+      path.startsWith('/auth/register') ||
+      path.startsWith('/auth/demo');
+    if (response.status === 401 && !isAuthAttempt) {
       clearToken();
       window.location.assign('/login');
     }
@@ -46,16 +115,21 @@ function fileNameFromDisposition(value) {
   return match?.[1] || '';
 }
 
-async function downloadRequest(path, options = {}) {
+async function downloadRequest(path, options = {}, timeoutMs = AI_TIMEOUT_MS) {
   const token = getToken();
+  const { headers: customHeaders, ...fetchOptions } = options;
 
-  const response = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers || {})
-    }
-  });
+  const response = await fetchWithTimeout(
+    `${API_URL}${path}`,
+    {
+      ...fetchOptions,
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(customHeaders || {}),
+      },
+    },
+    timeoutMs
+  );
 
   if (!response.ok) {
     const isJson = response.headers.get('content-type')?.includes('application/json');
@@ -69,82 +143,180 @@ async function downloadRequest(path, options = {}) {
 
   return {
     blob: await response.blob(),
-    fileName: fileNameFromDisposition(response.headers.get('content-disposition')) || 'deckai-export.pptx'
+    fileName:
+      fileNameFromDisposition(response.headers.get('content-disposition')) || 'deckai-export.pptx',
   };
 }
 
 export const api = {
-  register: (data) =>
-    request('/auth/register', {
+  register: async (data) => {
+    const result = await request('/auth/register', {
       method: 'POST',
-      body: JSON.stringify(data)
-    }),
+      body: JSON.stringify(data),
+    });
+    deactivateBrowserDemo();
+    return result;
+  },
 
-  login: (data) =>
-    request('/auth/login', {
+  login: async (data) => {
+    const result = await request('/auth/login', {
       method: 'POST',
-      body: JSON.stringify(data)
-    }),
+      body: JSON.stringify(data),
+    });
+    deactivateBrowserDemo();
+    return result;
+  },
 
-  me: () => request('/auth/me'),
+  loginDemo: async () => {
+    try {
+      const result = await request(
+        '/auth/demo',
+        { method: 'POST' },
+        DEMO_LOGIN_TIMEOUT_MS
+      );
+      deactivateBrowserDemo();
+      setToken(result.token);
+      return { ...result, demo: true, browserDemo: false };
+    } catch {
+      const fallback = activateBrowserDemo();
+      setToken(fallback.token);
+      return fallback;
+    }
+  },
 
-  getDecks: () => request('/decks'),
+  me: () => (isBrowserDemoActive() ? demoStore.me() : request('/auth/me')),
 
-  getSummary: () => request('/decks/stats/summary'),
+  getDecks: () => (isBrowserDemoActive() ? demoStore.getDecks() : request('/decks')),
 
-  getDeck: (deckId) => request(`/decks/${deckId}`),
+  getSummary: () =>
+    isBrowserDemoActive() ? demoStore.getSummary() : request('/decks/stats/summary'),
+
+  getDeck: (deckId) =>
+    isBrowserDemoActive() ? demoStore.getDeck(deckId) : request(`/decks/${deckId}`),
 
   createDeck: (data) =>
-    request('/decks', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    }),
+    isBrowserDemoActive()
+      ? demoStore.createDeck(data)
+      : request('/decks', {
+          method: 'POST',
+          body: JSON.stringify(data),
+        }),
 
   updateDeck: (deckId, data) =>
-    request(`/decks/${deckId}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data)
-    }),
+    isBrowserDemoActive()
+      ? demoStore.updateDeck(deckId, data)
+      : request(`/decks/${deckId}`, {
+          method: 'PATCH',
+          body: JSON.stringify(data),
+        }),
+
+  deleteDeck: (deckId) =>
+    isBrowserDemoActive()
+      ? demoStore.deleteDeck(deckId)
+      : request(`/decks/${deckId}`, {
+          method: 'DELETE',
+        }),
 
   generateOutline: (deckId) =>
-    request(`/decks/${deckId}/outline/generate`, {
-      method: 'POST'
-    }),
+    isBrowserDemoActive()
+      ? demoStore.generateOutline(deckId)
+      : request(
+          `/decks/${deckId}/outline/generate`,
+          { method: 'POST' },
+          AI_TIMEOUT_MS
+        ),
 
   getOutline: (deckId) =>
-    request(`/decks/${deckId}/outline`),
+    isBrowserDemoActive()
+      ? demoStore.getOutline(deckId)
+      : request(`/decks/${deckId}/outline`),
 
   updateOutline: (deckId, sections) =>
-    request(`/decks/${deckId}/outline`, {
-      method: 'PUT',
-      body: JSON.stringify({ sections })
-    }),
+    isBrowserDemoActive()
+      ? demoStore.updateOutline(deckId, sections)
+      : request(`/decks/${deckId}/outline`, {
+          method: 'PUT',
+          body: JSON.stringify({ sections }),
+        }),
 
   generateSlides: (deckId) =>
-    request(`/decks/${deckId}/slides/generate`, {
-      method: 'POST'
-    }),
+    isBrowserDemoActive()
+      ? demoStore.generateSlides(deckId)
+      : request(
+          `/decks/${deckId}/slides/generate`,
+          { method: 'POST' },
+          AI_TIMEOUT_MS
+        ),
 
   getSlides: (deckId) =>
-    request(`/decks/${deckId}/slides`),
+    isBrowserDemoActive()
+      ? demoStore.getSlides(deckId)
+      : request(`/decks/${deckId}/slides`),
+
+  createSlide: (deckId, data = {}) =>
+    isBrowserDemoActive()
+      ? demoStore.createSlide(deckId, data)
+      : request(`/decks/${deckId}/slides`, {
+          method: 'POST',
+          body: JSON.stringify(data),
+        }),
+
+  deleteSlide: (slideId) =>
+    isBrowserDemoActive()
+      ? demoStore.deleteSlide(slideId)
+      : request(`/slides/${slideId}`, {
+          method: 'DELETE',
+        }),
+
+  reorderSlides: (deckId, slideIds) =>
+    isBrowserDemoActive()
+      ? demoStore.reorderSlides(deckId, slideIds)
+      : request(`/decks/${deckId}/slides/reorder`, {
+          method: 'PATCH',
+          body: JSON.stringify({ slideIds }),
+        }),
 
   exportPptx: (deckId) =>
-    downloadRequest(`/decks/${deckId}/export/pptx`, {
-      method: 'POST'
-    }),
+    isBrowserDemoActive()
+      ? demoStore.exportPptx(deckId)
+      : downloadRequest(`/decks/${deckId}/export/pptx`, {
+          method: 'POST',
+        }),
 
   getExports: (deckId) =>
-    request(`/decks/${deckId}/exports`),
+    isBrowserDemoActive()
+      ? demoStore.getExports(deckId)
+      : request(`/decks/${deckId}/exports`),
 
   updateSlide: (slideId, data) =>
-    request(`/slides/${slideId}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data)
-    }),
+    isBrowserDemoActive()
+      ? demoStore.updateSlide(slideId, data)
+      : request(`/slides/${slideId}`, {
+          method: 'PATCH',
+          body: JSON.stringify(data),
+        }),
 
   regenerateSlide: (slideId, instruction) =>
-    request(`/slides/${slideId}/regenerate`, {
-      method: 'POST',
-      body: JSON.stringify({ instruction })
-    })
+    isBrowserDemoActive()
+      ? demoStore.regenerateSlide(slideId, instruction)
+      : request(
+          `/slides/${slideId}/regenerate`,
+          {
+            method: 'POST',
+            body: JSON.stringify({ instruction }),
+          },
+          AI_TIMEOUT_MS
+        ),
+
+  getSlideVersions: (slideId) =>
+    isBrowserDemoActive()
+      ? demoStore.getSlideVersions(slideId)
+      : request(`/slides/${slideId}/versions`),
+
+  restoreSlideVersion: (slideId, versionId) =>
+    isBrowserDemoActive()
+      ? demoStore.restoreSlideVersion(slideId, versionId)
+      : request(`/slides/${slideId}/versions/${versionId}/restore`, {
+          method: 'POST',
+        }),
 };

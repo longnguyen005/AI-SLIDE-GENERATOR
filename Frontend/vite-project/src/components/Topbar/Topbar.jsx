@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import Icon from '../Icon/Icon';
-import { api, getToken } from '../../service/apiClient';
+import { useAuth } from '../../context/AuthContext';
 import './Topbar.css';
 
 function initials(name = '') {
@@ -10,27 +10,7 @@ function initials(name = '') {
 }
 
 export default function Topbar({ title, subtitle, searchPlaceholder = 'Search slides...', action, showSearch = true }) {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadUser() {
-      if (!getToken()) return;
-      try {
-        const result = await api.me();
-        if (active) setUser(result.user);
-      } catch {
-        if (active) setUser(null);
-      }
-    }
-
-    loadUser();
-    return () => {
-      active = false;
-    };
-  }, []);
-
+  const { user } = useAuth();
   const avatar = useMemo(() => initials(user?.fullName || user?.email || ''), [user]);
 
   return (

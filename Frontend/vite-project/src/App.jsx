@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import LandingPage from './pages/LandingPage/LandingPage';
 import LoginPage from './pages/AuthPage/LoginPage';
@@ -8,18 +8,22 @@ import CreatePresentationPage from './pages/CreatePresentationPage/CreatePresent
 import OutlinePage from './pages/OutlinePage/OutlinePage';
 import PreviewPage from './pages/PreviewPage/PreviewPage';
 import EditorPage from './pages/EditorPage/EditorPage';
+import { AuthContext, AuthProvider, useAuth } from './context/AuthContext';
 import { getToken } from './service/apiClient';
 
 function RequireAuth({ children }) {
-  return getToken() ? children : <Navigate to="/login" replace />;
+  const { user, loading, isBrowserDemo } = useAuth();
+  if (loading) {
+    return (
+      <div className="dashboard-empty" style={{ margin: '48px auto', maxWidth: 420, textAlign: 'center' }}>
+        Loading workspace...
+      </div>
+    );
+  }
+  return user || isBrowserDemo || getToken() ? children : <Navigate to="/login" replace />;
 }
 
-export default function App() {
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('deckai_theme');
-    document.documentElement.dataset.theme = savedTheme === 'dark' ? 'dark' : 'light';
-  }, []);
-
+function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
@@ -36,5 +40,24 @@ export default function App() {
       <Route path="/editor/:deckId" element={<RequireAuth><EditorPage /></RequireAuth>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+  );
+}
+
+export default function App() {
+  const existingAuth = useContext(AuthContext);
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('deckai_theme');
+    document.documentElement.dataset.theme = savedTheme === 'dark' ? 'dark' : 'light';
+  }, []);
+
+  if (existingAuth) {
+    return <AppRoutes />;
+  }
+
+  return (
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
   );
 }
