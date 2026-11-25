@@ -1,41 +1,61 @@
 .stat-card {
-  min-height: 116px;
+  min-height: 98px;
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 22px;
-  border-radius: 18px;
-  background: #fff;
-  border: 1px solid #ecebf5;
-  box-shadow: 0 8px 20px rgba(37, 31, 98, 0.06);
+  gap: 16px;
+  padding: 18px 20px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
 }
+
 .stat-card__icon {
-  width: 60px;
-  height: 60px;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 auto;
   display: grid;
   place-items: center;
-  border-radius: 15px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-panel);
+  color: var(--fg-2);
 }
+
 .stat-card__icon--purple {
-  color: #4338ca;
-  background: #ece9ff;
+  color: var(--accent-text);
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
 }
+
 .stat-card__icon--blue {
-  color: #2563eb;
-  background: #e8f0ff;
+  color: var(--accent-text);
+  background: var(--bg-panel);
+  border-color: var(--border-strong);
 }
+
 .stat-card__icon--green {
-  color: #16a34a;
-  background: #e8f8ed;
+  color: var(--success-text);
+  background: var(--success-soft);
+  border-color: color-mix(in oklab, var(--success), transparent 72%);
 }
+
 .stat-card small {
   display: block;
-  color: #737084;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
   text-transform: uppercase;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  margin-bottom: 5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
 }
+
 .stat-card strong {
-  font-size: 26px;
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
 }

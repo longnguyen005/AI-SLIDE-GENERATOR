@@ -2,60 +2,85 @@
   position: relative;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  margin: 26px 10px 34px;
+  width: min(760px, 100%);
+  margin: 24px auto 28px;
 }
+
 .progress-steps__line {
   position: absolute;
-  top: 20px;
+  top: 18px;
   left: 12.5%;
   right: 12.5%;
   height: 2px;
-  background: #d9d8eb;
+  background: var(--border);
 }
+
 .progress-steps__line span {
   display: block;
   height: 100%;
-  background: #4338ca;
+  background: var(--accent);
+  transition: width var(--motion-base) var(--ease-standard);
 }
+
 .progress-step {
   position: relative;
   z-index: 1;
   display: grid;
   justify-items: center;
   gap: 8px;
-  color: #565365;
-  font-size: 13px;
+  color: var(--muted);
+  font-size: var(--text-xs);
 }
+
+.progress-step strong {
+  font-weight: 500;
+}
+
 .progress-step__dot {
-  width: 42px;
-  height: 42px;
+  width: 36px;
+  height: 36px;
   display: grid;
   place-items: center;
-  border-radius: 50%;
-  border: 2px solid #c9c8dc;
-  background: #eeeff9;
-  color: #fff;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--accent-on);
 }
+
 .progress-step__dot > span {
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  background: #c6c5d8;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--meta);
 }
+
 .progress-step--active {
-  color: #3427c9;
+  color: var(--fg);
 }
+
+.progress-step--active strong {
+  font-weight: 600;
+}
+
 .progress-step--active .progress-step__dot {
-  border: 6px solid #c8c5ff;
-  background: #4338ca;
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
 }
+
 .progress-step--active .progress-step__dot > span {
-  background: #fff;
+  background: var(--accent-on);
 }
+
+.progress-step--complete {
+  color: var(--fg-2);
+}
+
 .progress-step--complete .progress-step__dot {
-  border-color: #4338ca;
-  background: #4338ca;
+  border-color: var(--accent);
+  background: var(--accent);
 }
+
 @media (max-width: 600px) {
   .progress-step strong {
     display: none;

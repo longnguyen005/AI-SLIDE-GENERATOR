@@ -3,7 +3,7 @@ import path from 'node:path';
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import App from '../App';
 import { AuthProvider } from '../context/AuthContext';
@@ -21,6 +21,15 @@ const landingCssRaw = fs.readFileSync(
   path.resolve('src/pages/LandingPage/LandingPage.css'),
   'utf8'
 );
+const task3CssRaw = [
+  'src/pages/DashboardPage/DashboardPage.css',
+  'src/components/DeskCard/DeskCard.css',
+  'src/components/StatCard/StatCard.css',
+  'src/pages/CreatePresentationPage/CreatePresentationPage.css',
+  'src/pages/OutlinePage/OutlinePage.css',
+  'src/components/OutlineCard/OutlineCard.css',
+  'src/components/ProgressSteps/ProgressSteps.css',
+].map((relPath) => [relPath, fs.readFileSync(path.resolve(relPath), 'utf8')]);
 
 function ThemeProbe() {
   const { theme, isDark } = useTheme();
@@ -235,5 +244,132 @@ describe('DeckAI × Open Design UI Refactor', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(/passwords do not match/i);
     expect(nameInput).toHaveValue('Long Nguyen');
     expect(emailInput).toHaveValue('long@deckai.app');
+  });
+
+  it('filters Dashboard decks by Ready / In Progress pills and renders 200-char titles safely in DeskCard mini-covers', async () => {
+    globalThis.fetch = vi.fn().mockRejectedValue(new TypeError('Offline'));
+    await api.loginDemo();
+    const longTopic = `${'Autonomous Enterprise Telemetry '.repeat(7)}`.slice(0, 200);
+    await api.createDeck({ topic: longTopic, tone: 'academic', slideCount: 5 });
+
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText('Enterprise AI Copilots: 2026 Rollout Blueprint')).toBeInTheDocument();
+    expect(screen.getByText('GridScale Storage: Series A Investor Overview')).toBeInTheDocument();
+    expect(screen.getAllByText(longTopic).length).toBeGreaterThanOrEqual(1);
+
+    fireEvent.click(screen.getByRole('button', { name: /^ready\b/i }));
+    expect(screen.getByText('Enterprise AI Copilots: 2026 Rollout Blueprint')).toBeInTheDocument();
+    expect(screen.queryByText('GridScale Storage: Series A Investor Overview')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /^in progress\b/i }));
+    expect(screen.queryByText('Enterprise AI Copilots: 2026 Rollout Blueprint')).not.toBeInTheDocument();
+    expect(screen.getByText('GridScale Storage: Series A Investor Overview')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /^all\b/i }));
+    expect(screen.getByText('Enterprise AI Copilots: 2026 Rollout Blueprint')).toBeInTheDocument();
+    expect(screen.getByText('GridScale Storage: Series A Investor Overview')).toBeInTheDocument();
+
+    for (const [relPath, cssContent] of task3CssRaw) {
+      expect(cssContent, `${relPath} must use tokens.css variables with zero raw hexes`).not.toMatch(
+        /#[0-9a-fA-F]{3,8}\b/
+      );
+    }
+  });
+
+  it('pre-selects lowercase draft tone on CreatePresentationPage, populates starter chips, and submits lowercase tone', async () => {
+    globalThis.fetch = vi.fn().mockRejectedValue(new TypeError('Offline'));
+    await api.loginDemo();
+    const { deck } = await api.createDeck({
+      topic: 'Initial Research Topic',
+      tone: 'academic',
+      slideCount: 5,
+    });
+    const updateDeckSpy = vi.spyOn(api, 'updateDeck');
+
+    render(
+      <MemoryRouter initialEntries={[`/create?deckId=${deck._id}`]}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByDisplayValue('Initial Research Topic')).toBeInTheDocument();
+    const academicRadio = screen.getByRole('radio', { name: /academic/i });
+    const simpleRadio = screen.getByRole('radio', { name: /simple/i });
+    const professionalRadio = screen.getByRole('radio', { name: /professional/i });
+    const persuasiveRadio = screen.getByRole('radio', { name: /persuasive/i });
+    expect(academicRadio).toHaveAttribute('aria-checked', 'true');
+    expect(screen.queryByText(/10k\+/i)).not.toBeInTheDocument();
+
+    // WAI-ARIA keyboard roving navigation across Tone radiogroup
+    academicRadio.focus();
+    fireEvent.keyDown(document.activeElement, { key: 'ArrowRight' });
+    expect(document.activeElement).toBe(simpleRadio);
+    expect(simpleRadio).toHaveAttribute('aria-checked', 'true');
+
+    fireEvent.keyDown(document.activeElement, { key: 'Home' });
+    expect(document.activeElement).toBe(professionalRadio);
+    expect(professionalRadio).toHaveAttribute('aria-checked', 'true');
+
+    fireEvent.keyDown(document.activeElement, { key: 'End' });
+    expect(document.activeElement).toBe(persuasiveRadio);
+    expect(persuasiveRadio).toHaveAttribute('aria-checked', 'true');
+
+    // Starter chip updates topic and switching Tone card submits lowercase tone
+    fireEvent.click(screen.getAllByRole('button', { name: /use starter:/i })[0]);
+    fireEvent.click(screen.getByRole('radio', { name: /persuasive/i }));
+    fireEvent.click(screen.getByRole('button', { name: /update outline/i }));
+
+    await waitFor(() => {
+      expect(updateDeckSpy).toHaveBeenCalledWith(
+        deck._id,
+        expect.objectContaining({ tone: 'persuasive' })
+      );
+    });
+  });
+
+  it('supports OutlinePage section add, move, remove, removes fake +1 pill, and normalizes blank section titles before save', async () => {
+    globalThis.fetch = vi.fn().mockRejectedValue(new TypeError('Offline'));
+    await api.loginDemo();
+    const updateOutlineSpy = vi.spyOn(api, 'updateOutline');
+
+    render(
+      <MemoryRouter initialEntries={['/outline/demo-deck-outline']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole('heading', { name: /outline editor/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /collaborators/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /account details/i })).toBeInTheDocument();
+
+    // Theme toggle works on OutlinePage
+    fireEvent.click(screen.getByRole('button', { name: /toggle color theme/i }));
+    expect(document.documentElement.dataset.theme).toBe('dark');
+
+    // 5 seeded sections -> Add section -> 6 sections -> Remove -> Add back -> 6 sections
+    fireEvent.click(screen.getByRole('button', { name: /add section/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove section 6' }));
+    expect(screen.queryByLabelText('Section title 6')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /add section/i }));
+    const sixthTitle = screen.getByLabelText('Section title 6');
+    fireEvent.change(sixthTitle, { target: { value: '   ' } }); // blank whitespace (Review Focus #3)
+
+    // Move section 6 up to position 5
+    fireEvent.click(screen.getByRole('button', { name: 'Move section 6 up' }));
+
+    // Save via Back to Topic and verify normalized non-empty section title
+    fireEvent.click(screen.getByRole('button', { name: /back to topic/i }));
+    await waitFor(() => {
+      expect(updateOutlineSpy).toHaveBeenCalledTimes(1);
+    });
+    const savedSections = updateOutlineSpy.mock.calls[0][1];
+    expect(savedSections).toHaveLength(6);
+    expect(savedSections[4].title).toBe('Section 5');
   });
 });

@@ -3,6 +3,25 @@ import { Link } from 'react-router-dom';
 import Icon from '../Icon/Icon';
 import './DeskCard.css';
 
+const TONE_COVERS = {
+  professional: {
+    key: 'professional',
+    eyebrow: 'Executive Brief',
+  },
+  academic: {
+    key: 'academic',
+    eyebrow: 'Research Study',
+  },
+  persuasive: {
+    key: 'persuasive',
+    eyebrow: 'Pitch Narrative',
+  },
+  simple: {
+    key: 'simple',
+    eyebrow: 'Clear Overview',
+  },
+};
+
 function deckHref(deckId, status) {
   if (status === 'ready') {
     return `/preview/${deckId}`;
@@ -11,36 +30,66 @@ function deckHref(deckId, status) {
 }
 
 export default function DeckCard({ deck, selected = false, onDelete, deleting = false }) {
-  const deckId = deck._id || deck.id;
-  const title = deck.title || deck.topic || 'Untitled deck';
-  const subtitle = deck.description || deck.topic || deck.status || 'No description yet';
-  const slides = Number(deck.slideCount || deck.slides || 0);
-  const status = deck.status ? deck.status.replace(/_/g, ' ') : 'draft';
-  const isReady = deck.status === 'ready';
+  const deckId = deck?._id || deck?.id || '';
+  const title = String(deck?.title || deck?.topic || 'Untitled deck').trim() || 'Untitled deck';
+  const statusLabel = deck?.status ? String(deck.status).replace(/_/g, ' ') : 'draft';
+  const subtitle =
+    String(deck?.description || deck?.topic || statusLabel || 'No description yet').trim() ||
+    'No description yet';
+  const slides = Math.max(0, Number(deck?.slideCount ?? deck?.slides ?? 0) || 0);
+  const isReady = deck?.status === 'ready';
+
+  const normalizedTone = String(deck?.tone || 'professional').trim().toLowerCase();
+  const coverVariant = TONE_COVERS[normalizedTone] || TONE_COVERS.professional;
+
+  const firstSectionTitle =
+    typeof deck?.outline?.sections?.[0]?.title === 'string'
+      ? deck.outline.sections[0].title.trim()
+      : '';
+  const distinctTopic =
+    typeof deck?.topic === 'string' && deck.topic.trim() && deck.topic.trim() !== title
+      ? deck.topic.trim()
+      : '';
+  const coverHeadline = firstSectionTitle || distinctTopic || title;
 
   return (
     <article className={`deck-card ${selected ? 'deck-card--selected' : ''}`}>
       {selected && (
-        <span className="deck-card__check">
-          <Icon name="check" size={16} />
+        <span className="deck-card__check" aria-hidden="true">
+          <Icon name="check" size={14} />
         </span>
       )}
 
-      <Link to={deckHref(deckId, deck.status)} className="deck-card__main">
-        <div className="deck-card__cover deck-card__cover--blue">
-          <span className="deck-card__cover-icon">
-            <Icon name="sparkles" size={52} />
-          </span>
-          <span className="deck-card__slides">{slides} slides</span>
+      <Link to={deckHref(deckId, deck?.status)} className="deck-card__main">
+        <div
+          className={`deck-card__cover deck-card__cover--${coverVariant.key}`}
+          aria-hidden="true"
+        >
+          <div className="deck-card__cover-frame">
+            <div className="deck-card__cover-top">
+              <span className="deck-card__eyebrow">{coverVariant.eyebrow}</span>
+              <span className="deck-card__slides">
+                {`${slides} ${slides === 1 ? 'slide' : 'slides'}`}
+              </span>
+            </div>
+
+            <div className="deck-card__cover-headline">{coverHeadline}</div>
+
+            <div className="deck-card__cover-bars">
+              <span className="deck-card__bar deck-card__bar--primary" />
+              <span className="deck-card__bar deck-card__bar--secondary" />
+            </div>
+          </div>
         </div>
+
         <h3>{title}</h3>
         <p>{subtitle}</p>
       </Link>
 
       <div className="deck-card__footer">
         <div className="deck-card__tags">
-          <span className={isReady ? 'is-ready' : 'is-draft'}>{status}</span>
-          {deck.tone && <span>{deck.tone}</span>}
+          <span className={isReady ? 'is-ready' : 'is-draft'}>{statusLabel}</span>
+          {deck?.tone && <span>{String(deck.tone)}</span>}
         </div>
 
         <div className="deck-card__actions">

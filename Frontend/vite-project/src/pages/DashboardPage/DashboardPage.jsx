@@ -13,6 +13,7 @@ export default function DashboardPage() {
   const [decks, setDecks] = useState([]);
   const [exportCount, setExportCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [deletingId, setDeletingId] = useState('');
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(true);
@@ -47,22 +48,37 @@ export default function DashboardPage() {
     () => decks.filter((deck) => deck.status === 'ready').length,
     [decks]
   );
+  const inProgressCount = useMemo(
+    () => decks.filter((deck) => deck.status !== 'ready').length,
+    [decks]
+  );
   const plannedSlides = useMemo(
     () => decks.reduce((total, deck) => total + Number(deck.slideCount || 0), 0),
     [decks]
   );
 
+  const filterTabs = useMemo(
+    () => [
+      { id: 'all', label: 'All', count: decks.length },
+      { id: 'ready', label: 'Ready', count: readyCount },
+      { id: 'draft', label: 'In Progress', count: inProgressCount },
+    ],
+    [decks.length, readyCount, inProgressCount]
+  );
+
   const filteredDecks = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    if (!query) return decks;
     return decks.filter((deck) => {
+      if (statusFilter === 'ready' && deck.status !== 'ready') return false;
+      if (statusFilter === 'draft' && deck.status === 'ready') return false;
+      if (!query) return true;
       const haystack = [deck.title, deck.topic, deck.description, deck.tone, deck.status]
         .filter(Boolean)
         .join(' ')
         .toLowerCase();
       return haystack.includes(query);
     });
-  }, [decks, searchQuery]);
+  }, [decks, searchQuery, statusFilter]);
 
   const handleDeleteDeck = async (deck) => {
     const deckId = deck._id || deck.id;
@@ -78,6 +94,8 @@ export default function DashboardPage() {
       setDeletingId('');
     }
   };
+
+  const hasActiveFilter = Boolean(searchQuery.trim()) || statusFilter !== 'all';
 
   return (
     <div className="page-shell dashboard-page">
@@ -98,44 +116,84 @@ export default function DashboardPage() {
           }
         />
 
-        {notice && <div className="dashboard-message">{notice}</div>}
+        {notice && (
+          <div className="dashboard-message" role="alert">
+            {notice}
+          </div>
+        )}
 
         <section className="dashboard-stats" aria-label="Workspace stats">
           <StatCard icon="dashboard" label="Total decks" value={decks.length} />
-          <StatCard icon="check" label="Ready decks" value={readyCount} />
+          <StatCard icon="check" label="Ready decks" value={readyCount} tone="green" />
           <StatCard icon="layers" label="Planned slides" value={plannedSlides} tone="blue" />
           <StatCard icon="download" label="Exports" value={exportCount} />
         </section>
 
         <section className="dashboard-section">
           <div className="dashboard-section__heading">
-            <h2>Recent decks</h2>
-            <span className="dashboard-section__count">
-              {searchQuery.trim()
-                ? `${filteredDecks.length} of ${decks.length} matching`
-                : `${decks.length} total`}
-            </span>
+            <div className="dashboard-section__title-row">
+              <h2>Recent decks</h2>
+              <span className="dashboard-section__count">
+                {hasActiveFilter
+                  ? `${filteredDecks.length} of ${decks.length} matching`
+                  : `${decks.length} total`}
+              </span>
+            </div>
+
+            <div
+              className="dashboard-filters"
+              role="group"
+              aria-label="Filter presentations by status"
+            >
+              {filterTabs.map((tab) => {
+                const isActive = statusFilter === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    className={`dashboard-filter-pill ${isActive ? 'dashboard-filter-pill--active' : ''}`}
+                    aria-pressed={isActive}
+                    onClick={() => setStatusFilter(tab.id)}
+                  >
+                    <span>{tab.label}</span>{' '}
+                    <span className="dashboard-filter-pill__count">{tab.count}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
+
           <div className="dashboard-decks">
             {loading && <div className="dashboard-empty">Loading decks...</div>}
 
             {!loading &&
               filteredDecks.map((deck, index) => (
                 <DeckCard
-                  key={deck._id}
+                  key={deck._id || deck.id}
                   deck={deck}
-                  selected={index === 0 && !searchQuery.trim()}
+                  selected={index === 0 && !hasActiveFilter}
                   onDelete={handleDeleteDeck}
-                  deleting={deletingId === deck._id}
+                  deleting={deletingId === (deck._id || deck.id)}
                 />
               ))}
 
             {!loading && decks.length > 0 && filteredDecks.length === 0 && (
               <div className="dashboard-empty">
                 <strong>No matching decks</strong>
-                <small>No presentations matched &ldquo;{searchQuery.trim()}&rdquo;.</small>
-                <Button type="button" variant="outline" onClick={() => setSearchQuery('')}>
-                  Clear search
+                <small>
+                  {searchQuery.trim()
+                    ? `No presentations matched “${searchQuery.trim()}”.`
+                    : `No ${statusFilter === 'ready' ? 'ready' : 'in-progress'} presentations found.`}
+                </small>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setStatusFilter('all');
+                  }}
+                >
+                  {searchQuery.trim() ? 'Clear search' : 'Show all decks'}
                 </Button>
               </div>
             )}
@@ -149,10 +207,10 @@ export default function DashboardPage() {
 
             <Link to="/create" className="new-deck-card">
               <span>
-                <Icon name="plus" size={34} />
+                <Icon name="plus" size={26} />
               </span>
               <strong>Start from scratch</strong>
-              <small>Create a blank canvas</small>
+              <small>Create a structured deck from a topic</small>
             </Link>
           </div>
         </section>
