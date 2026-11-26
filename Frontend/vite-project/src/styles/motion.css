@@ -149,22 +149,22 @@
 .page-content,
 .create-main,
 .editor-workspace {
-  animation: deckai-rise-in var(--motion-base) var(--ease-out) both;
+  animation: deckai-rise-in var(--motion-base) var(--ease-out) backwards;
 }
 
 .outline-main {
-  animation: deckai-fade-in var(--motion-base) var(--ease-out) both;
+  animation: deckai-fade-in var(--motion-base) var(--ease-out) backwards;
 }
 
 .sidebar-popup-backdrop,
 .modal-backdrop {
-  animation: deckai-fade-in var(--motion-fast) var(--ease-out) both;
+  animation: deckai-fade-in var(--motion-fast) var(--ease-out) backwards;
 }
 
 .sidebar-popup,
 .regenerate-modal {
   transform-origin: center;
-  animation: deckai-scale-in var(--motion-base) var(--ease-out) both;
+  animation: deckai-scale-in var(--motion-base) var(--ease-out) backwards;
 }
 
 /* ─── Scroll-Triggered Reveal Choreography ───────────────────────────────── */
@@ -222,7 +222,7 @@
   .sidebar-popup,
   .regenerate-modal,
   .auth-form {
-    animation: deckai-fade-in 120ms linear both !important;
+    animation: deckai-fade-in 120ms linear backwards !important;
   }
 
   .auth-notice,

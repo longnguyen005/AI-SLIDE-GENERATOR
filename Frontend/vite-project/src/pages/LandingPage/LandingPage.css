@@ -106,7 +106,7 @@
 }
 
 .landing-hero__stagger {
-  animation: deckai-rise-in var(--motion-enter) var(--ease-out) both;
+  animation: deckai-rise-in var(--motion-enter) var(--ease-out) backwards;
   animation-delay: calc(var(--hero-step, 0) * 55ms);
 }
 

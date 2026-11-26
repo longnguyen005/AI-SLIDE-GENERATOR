@@ -74,12 +74,16 @@ describe('DeckAI × Open Design Motion Choreography', () => {
     const transitionAllOffenders = [];
     const layoutTransitionOffenders = [];
     const undefinedVarOffenders = [];
+    const forwardFillEntranceOffenders = [];
 
     for (const file of collectCssFiles(srcDir)) {
       const css = fs.readFileSync(file, 'utf8');
       const rel = path.relative(srcDir, file);
       if (/transition\s*:\s*all\b/i.test(css)) {
         transitionAllOffenders.push(rel);
+      }
+      if (/deckai-(?:rise-in|scale-in|fade-in|slide-forward|slide-backward|item-cascade|slot-up|slot-down)[^;{}]*\bboth\b/i.test(css)) {
+        forwardFillEntranceOffenders.push(rel);
       }
       for (const match of css.matchAll(/transition(?:-property)?\s*:\s*([^;{}]+);/gi)) {
         if (/\b(width|height|top|left|margin|padding)\b/i.test(match[1])) {
@@ -95,6 +99,7 @@ describe('DeckAI × Open Design Motion Choreography', () => {
     expect(transitionAllOffenders).toEqual([]);
     expect(layoutTransitionOffenders).toEqual([]);
     expect(undefinedVarOffenders).toEqual([]);
+    expect(forwardFillEntranceOffenders).toEqual([]);
   });
 
   it('drives directional SlideCanvas transitions, sliding tab pill, and tour play/pause/focus controls in HeroShowcase', () => {

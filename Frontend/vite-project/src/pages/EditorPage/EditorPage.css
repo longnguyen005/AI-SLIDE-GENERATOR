@@ -390,7 +390,7 @@
   background: var(--accent-soft);
   font-size: var(--text-sm);
   font-weight: 500;
-  animation: deckai-rise-in var(--motion-base) var(--ease-out) both;
+  animation: deckai-rise-in var(--motion-base) var(--ease-out) backwards;
 }
 
 .editor-toast--error {

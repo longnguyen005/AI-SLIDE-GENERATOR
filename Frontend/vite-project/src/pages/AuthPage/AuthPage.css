@@ -89,7 +89,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface);
-  animation: deckai-rise-in var(--motion-enter) var(--ease-out) both;
+  animation: deckai-rise-in var(--motion-enter) var(--ease-out) backwards;
 }
 
 .auth-form__header {

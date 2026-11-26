@@ -8,7 +8,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface);
-  animation: deckai-rise-in var(--motion-enter) var(--ease-out) both;
+  animation: deckai-rise-in var(--motion-enter) var(--ease-out) backwards;
   animation-delay: calc(var(--stagger-index, 0) * 45ms);
   transition:
     border-color var(--motion-fast) var(--ease-out),

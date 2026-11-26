@@ -12,16 +12,16 @@
     var(--surface);
   color: var(--fg);
   box-shadow: var(--elev-raised);
-  animation: deckai-scale-in var(--motion-base) var(--ease-out) both;
+  animation: deckai-scale-in var(--motion-base) var(--ease-out) backwards;
   will-change: transform, opacity;
 }
 
 .slide-canvas[data-direction="forward"] {
-  animation: deckai-slide-forward 240ms var(--ease-out) both;
+  animation: deckai-slide-forward 240ms var(--ease-out) backwards;
 }
 
 .slide-canvas[data-direction="backward"] {
-  animation: deckai-slide-backward 240ms var(--ease-out) both;
+  animation: deckai-slide-backward 240ms var(--ease-out) backwards;
 }
 
 .slide-canvas__accent {
@@ -469,12 +469,12 @@
 .slide-canvas__points li,
 .slide-canvas__column,
 .slide-canvas__summary-card {
-  animation: deckai-item-cascade 260ms var(--ease-out) both;
+  animation: deckai-item-cascade 260ms var(--ease-out) backwards;
   animation-delay: calc(var(--item-index, 0) * 35ms);
 }
 
 .slide-canvas__visual-icon {
-  animation: deckai-scale-in 320ms var(--ease-out) 60ms both;
+  animation: deckai-scale-in 320ms var(--ease-out) 60ms backwards;
 }
 
 @media (prefers-reduced-motion: reduce) {

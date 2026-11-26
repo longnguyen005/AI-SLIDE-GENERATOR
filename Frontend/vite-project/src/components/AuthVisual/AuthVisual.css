@@ -104,7 +104,7 @@
     0 0 0 1px rgba(94, 106, 210, 0.16);
   transform-style: preserve-3d;
   will-change: transform;
-  animation: deckai-scale-in var(--motion-enter) var(--ease-out) both;
+  animation: deckai-scale-in var(--motion-enter) var(--ease-out) backwards;
 }
 
 .auth-visual__slide-top {
@@ -221,7 +221,7 @@
 
 .auth-visual__slide-rows li,
 .auth-visual__checks li {
-  animation: deckai-item-cascade 280ms var(--ease-out) both;
+  animation: deckai-item-cascade 280ms var(--ease-out) backwards;
   animation-delay: calc(var(--item-index, 0) * 60ms + 80ms);
 }
 

@@ -11,7 +11,7 @@
   background: var(--accent-soft);
   font-size: var(--text-sm);
   font-weight: 500;
-  animation: deckai-rise-in var(--motion-base) var(--ease-out) both;
+  animation: deckai-rise-in var(--motion-base) var(--ease-out) backwards;
 }
 
 .preview-empty {
@@ -175,7 +175,7 @@
   font-size: var(--text-sm);
   line-height: 1.55;
   overflow-wrap: anywhere;
-  animation: deckai-item-cascade var(--motion-base) var(--ease-out) both;
+  animation: deckai-item-cascade var(--motion-base) var(--ease-out) backwards;
 }
 
 .export-card {

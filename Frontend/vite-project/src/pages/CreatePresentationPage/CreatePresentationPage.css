@@ -307,11 +307,11 @@
 }
 
 .slide-stepper strong[data-step-dir="up"] {
-  animation: deckai-slot-up 160ms var(--ease-out) both;
+  animation: deckai-slot-up 160ms var(--ease-out) backwards;
 }
 
 .slide-stepper strong[data-step-dir="down"] {
-  animation: deckai-slot-down 160ms var(--ease-out) both;
+  animation: deckai-slot-down 160ms var(--ease-out) backwards;
 }
 
 .slide-stepper button {

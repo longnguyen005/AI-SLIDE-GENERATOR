@@ -51,8 +51,9 @@
   letter-spacing: 0.04em;
   cursor: pointer;
   transition:
-    background var(--motion-fast) var(--ease-standard),
-    border-color var(--motion-fast) var(--ease-standard);
+    background var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out),
+    transform var(--motion-press) var(--ease-out);
 }
 
 .outline-pill:hover {
@@ -70,9 +71,10 @@
   color: var(--fg-2);
   cursor: pointer;
   transition:
-    background var(--motion-fast) var(--ease-standard),
-    border-color var(--motion-fast) var(--ease-standard),
-    color var(--motion-fast) var(--ease-standard);
+    background var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out),
+    color var(--motion-fast) var(--ease-out),
+    transform var(--motion-press) var(--ease-out);
 }
 
 .outline-theme-toggle:hover {
@@ -93,7 +95,9 @@
   font-size: var(--text-xs);
   font-weight: 600;
   cursor: pointer;
-  transition: background var(--motion-fast) var(--ease-standard);
+  transition:
+    background var(--motion-fast) var(--ease-out),
+    transform var(--motion-press) var(--ease-out);
 }
 
 .outline-avatar-btn:hover {
