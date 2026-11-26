@@ -12,7 +12,16 @@
     var(--surface);
   color: var(--fg);
   box-shadow: var(--elev-raised);
-  animation: slide-canvas-in var(--motion-base) var(--ease-standard);
+  animation: deckai-scale-in var(--motion-base) var(--ease-out) both;
+  will-change: transform, opacity;
+}
+
+.slide-canvas[data-direction="forward"] {
+  animation: deckai-slide-forward 240ms var(--ease-out) both;
+}
+
+.slide-canvas[data-direction="backward"] {
+  animation: deckai-slide-backward 240ms var(--ease-out) both;
 }
 
 .slide-canvas__accent {
@@ -456,20 +465,28 @@
   background: var(--surface-elevated);
 }
 
-@keyframes slide-canvas-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.slide-canvas__hero-lead,
+.slide-canvas__points li,
+.slide-canvas__column,
+.slide-canvas__summary-card {
+  animation: deckai-item-cascade 260ms var(--ease-out) both;
+  animation-delay: calc(var(--item-index, 0) * 35ms);
+}
+
+.slide-canvas__visual-icon {
+  animation: deckai-scale-in 320ms var(--ease-out) 60ms both;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .slide-canvas {
-    animation: none;
+  .slide-canvas,
+  .slide-canvas[data-direction="forward"],
+  .slide-canvas[data-direction="backward"],
+  .slide-canvas__hero-lead,
+  .slide-canvas__points li,
+  .slide-canvas__column,
+  .slide-canvas__summary-card,
+  .slide-canvas__visual-icon {
+    animation: none !important;
   }
 }
 

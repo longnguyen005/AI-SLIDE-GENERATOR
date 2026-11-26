@@ -1,7 +1,9 @@
 import React, { useRef } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import App from '../App';
 import { useCountUp, useReducedMotion, useScrollReveal } from '../hooks/useMotion';
 
 function RevealHarness() {
@@ -63,5 +65,27 @@ describe('DeckAI × Open Design Motion Choreography', () => {
       }
     }
     expect(transitionAllOffenders).toEqual([]);
+  });
+
+  it('drives directional SlideCanvas transitions, sliding tab pill, and tour play/pause controls in HeroShowcase', () => {
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    const showcase = screen.getByRole('region', { name: /interactive workspace preview/i });
+    expect(showcase.querySelector('.hero-showcase__pill')).toBeInTheDocument();
+
+    fireEvent.click(within(showcase).getByRole('tab', { name: /side-by-side/i }));
+    expect(showcase.querySelector('.slide-canvas')).toHaveAttribute('data-direction', 'forward');
+
+    fireEvent.click(within(showcase).getByRole('tab', { name: /section break/i }));
+    expect(showcase.querySelector('.slide-canvas')).toHaveAttribute('data-direction', 'backward');
+
+    const tourBtn = within(showcase).getByRole('button', { name: /layout tour/i });
+    const initialLabel = tourBtn.getAttribute('aria-label');
+    fireEvent.click(tourBtn);
+    expect(tourBtn.getAttribute('aria-label')).not.toBe(initialLabel);
   });
 });

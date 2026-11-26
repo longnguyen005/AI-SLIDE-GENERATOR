@@ -21,7 +21,7 @@ function visualIcon(title = '') {
   return 'sparkles';
 }
 
-export default function SlideCanvas({ slide }) {
+export default function SlideCanvas({ slide, direction = 0 }) {
   const rawPoints = slide?.content || slide?.points || [];
   const points = Array.isArray(rawPoints) ? rawPoints.filter((point) => String(point).trim().length > 0) : [];
   const rawLayout = slide?.layout || 'content';
@@ -29,6 +29,7 @@ export default function SlideCanvas({ slide }) {
   const slideNum = String(slide?.slideNumber || 1).padStart(2, '0');
   const title = slide?.title || 'Untitled slide';
   const icon = visualIcon(title);
+  const directionAttr = direction > 0 ? 'forward' : direction < 0 ? 'backward' : 'neutral';
 
   const midIndex = Math.max(1, Math.ceil(points.length / 2));
   const leftColumnPoints = points.slice(0, midIndex);
@@ -38,6 +39,7 @@ export default function SlideCanvas({ slide }) {
     <section
       className={`slide-canvas slide-canvas--${layout}`}
       data-layout={layout}
+      data-direction={directionAttr}
       aria-label={`Slide ${slideNum}: ${title}`}
     >
       <div className="slide-canvas__accent" aria-hidden="true">
@@ -53,13 +55,13 @@ export default function SlideCanvas({ slide }) {
               {LAYOUT_LABELS.title} • Slide {slideNum}
             </span>
             <h2>{title}</h2>
-            <p className="slide-canvas__hero-lead">
+            <p className="slide-canvas__hero-lead" style={{ '--item-index': 0 }}>
               {points[0] || 'Executive presentation generated with DeckAI.'}
             </p>
             {points.length > 1 && (
               <ul className="slide-canvas__points slide-canvas__points--compact">
                 {points.slice(1).map((point, index) => (
-                  <li key={`${point}-${index}`}>
+                  <li key={`${point}-${index}`} style={{ '--item-index': index + 1 }}>
                     <span>{String(index + 2).padStart(2, '0')}</span>
                     <p>{point}</p>
                   </li>
@@ -93,7 +95,7 @@ export default function SlideCanvas({ slide }) {
           {points.length ? (
             <ul className="slide-canvas__points slide-canvas__points--section">
               {points.map((point, index) => (
-                <li key={`${point}-${index}`}>
+                <li key={`${point}-${index}`} style={{ '--item-index': index }}>
                   <span>{String(index + 1).padStart(2, '0')}</span>
                   <p>{point}</p>
                 </li>
@@ -115,7 +117,7 @@ export default function SlideCanvas({ slide }) {
             {points.length ? (
               <ul className="slide-canvas__points">
                 {points.map((point, index) => (
-                  <li key={`${point}-${index}`}>
+                  <li key={`${point}-${index}`} style={{ '--item-index': index }}>
                     <span>{String(index + 1).padStart(2, '0')}</span>
                     <p>{point}</p>
                   </li>
@@ -146,12 +148,12 @@ export default function SlideCanvas({ slide }) {
           </span>
           <h2>{title}</h2>
           <div className="slide-canvas__columns">
-            <div className="slide-canvas__column">
+            <div className="slide-canvas__column" style={{ '--item-index': 0 }}>
               <strong className="slide-canvas__column-label">Column 01</strong>
               {leftColumnPoints.length ? (
                 <ul className="slide-canvas__points">
                   {leftColumnPoints.map((point, index) => (
-                    <li key={`${point}-${index}`}>
+                    <li key={`${point}-${index}`} style={{ '--item-index': index + 1 }}>
                       <span>{String(index + 1).padStart(2, '0')}</span>
                       <p>{point}</p>
                     </li>
@@ -161,12 +163,12 @@ export default function SlideCanvas({ slide }) {
                 <p className="slide-canvas__empty">No points in column 1.</p>
               )}
             </div>
-            <div className="slide-canvas__column slide-canvas__column--alt">
+            <div className="slide-canvas__column slide-canvas__column--alt" style={{ '--item-index': 1 }}>
               <strong className="slide-canvas__column-label">Column 02</strong>
               {rightColumnPoints.length ? (
                 <ul className="slide-canvas__points">
                   {rightColumnPoints.map((point, index) => (
-                    <li key={`${point}-${index}`}>
+                    <li key={`${point}-${index}`} style={{ '--item-index': midIndex + index + 1 }}>
                       <span>{String(midIndex + index + 1).padStart(2, '0')}</span>
                       <p>{point}</p>
                     </li>
@@ -189,7 +191,11 @@ export default function SlideCanvas({ slide }) {
           {points.length ? (
             <ul className="slide-canvas__summary-grid">
               {points.map((point, index) => (
-                <li key={`${point}-${index}`} className="slide-canvas__summary-card">
+                <li
+                  key={`${point}-${index}`}
+                  className="slide-canvas__summary-card"
+                  style={{ '--item-index': index }}
+                >
                   <div className="slide-canvas__summary-head">
                     <span className="slide-canvas__summary-check">
                       <Icon name="check" size={16} />

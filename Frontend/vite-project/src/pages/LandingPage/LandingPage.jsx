@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Logo from '../../components/Logo/Logo';
 import Button from '../../components/Button/Button';
@@ -7,6 +7,7 @@ import HeroShowcase from '../../components/HeroShowcase/HeroShowcase';
 import Icon from '../../components/Icon/Icon';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useScrollReveal } from '../../hooks/useMotion';
 import './LandingPage.css';
 
 const features = [
@@ -35,8 +36,11 @@ export default function LandingPage() {
   const navigate = useNavigate();
   const { startInstantDemo } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const pageRef = useRef(null);
   const [demoLoading, setDemoLoading] = useState(false);
   const [demoError, setDemoError] = useState('');
+
+  useScrollReveal(pageRef);
 
   const handleInstantDemo = async () => {
     if (demoLoading) return;
@@ -53,7 +57,7 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="landing-page">
+    <div ref={pageRef} className="landing-page">
       <header className="landing-nav">
         <Logo compact />
         <nav aria-label="Primary">
@@ -80,12 +84,16 @@ export default function LandingPage() {
       <main>
         <section className="landing-hero">
           <span className="landing-hero__glow" aria-hidden="true" />
-          <p className="landing-eyebrow">AI presentation workspace</p>
-          <h1>Create Stunning Presentations<br />with AI</h1>
-          <p className="landing-hero__copy">
+          <p className="landing-eyebrow landing-hero__stagger" style={{ '--hero-step': 0 }}>
+            AI presentation workspace
+          </p>
+          <h1 className="landing-hero__stagger" style={{ '--hero-step': 1 }}>
+            Create Stunning Presentations<br />with AI
+          </h1>
+          <p className="landing-hero__copy landing-hero__stagger" style={{ '--hero-step': 2 }}>
             Turn rough briefs into structured outlines, editable 16:9 slide layouts, and clean PowerPoint exports with engineered clarity.
           </p>
-          <div className="landing-hero__actions">
+          <div className="landing-hero__actions landing-hero__stagger" style={{ '--hero-step': 3 }}>
             <Button to="/register" iconRight="arrowRight">Get Started Free</Button>
             <Button
               type="button"
@@ -98,17 +106,24 @@ export default function LandingPage() {
               {demoLoading ? 'Launching Demo...' : 'Try Instant Demo'}
             </Button>
           </div>
-          <p className="landing-hero__subnote">
+          <p className="landing-hero__subnote landing-hero__stagger" style={{ '--hero-step': 4 }}>
             No signup required — explore pre-built AI decks and export real .pptx slides immediately.
           </p>
           {demoError && <div className="landing-hero__error" role="alert">{demoError}</div>}
 
-          <HeroShowcase onLaunchDemo={handleInstantDemo} demoLoading={demoLoading} />
+          <div className="landing-hero__showcase-wrap landing-hero__stagger" style={{ '--hero-step': 5 }}>
+            <HeroShowcase onLaunchDemo={handleInstantDemo} demoLoading={demoLoading} />
+          </div>
         </section>
 
         <section className="landing-stats" id="specs" aria-label="Product capabilities">
-          {productSpecs.map(([metric, label]) => (
-            <div key={label} className="landing-stats__item">
+          {productSpecs.map(([metric, label], index) => (
+            <div
+              key={label}
+              className="landing-stats__item"
+              data-reveal
+              style={{ '--stagger-index': index }}
+            >
               <strong>{metric}</strong>
               <span>{label}</span>
             </div>
@@ -116,13 +131,19 @@ export default function LandingPage() {
         </section>
 
         <section className="landing-features" id="features">
-          <div className="section-heading">
+          <div className="section-heading" data-reveal>
             <p>Built for Structured Storytelling</p>
             <span>Focus on your narrative while DeckAI handles outline hierarchy, slide geometry, and export fidelity.</span>
           </div>
           <div className="landing-features__grid">
-            {features.map(([icon, title, description]) => (
-              <FeatureCard key={title} icon={icon} title={title}>
+            {features.map(([icon, title, description], index) => (
+              <FeatureCard
+                key={title}
+                icon={icon}
+                title={title}
+                data-reveal
+                style={{ '--stagger-index': index }}
+              >
                 {description}
               </FeatureCard>
             ))}
@@ -130,13 +151,13 @@ export default function LandingPage() {
         </section>
 
         <section className="landing-workflow" id="workflow">
-          <div className="section-heading">
+          <div className="section-heading" data-reveal>
             <p>From idea to presentation in 4 steps</p>
             <span>Every stage stays editable, inspectable, and version-safe.</span>
           </div>
-          <div className="workflow-line">
+          <div className="workflow-line" data-reveal>
             {workflowSteps.map(([step, copy], index) => (
-              <article key={step}>
+              <article key={step} data-reveal style={{ '--stagger-index': index }}>
                 <span>{`0${index + 1}`}</span>
                 <h3>{step}</h3>
                 <p>{copy}</p>
@@ -145,7 +166,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="landing-cta" id="pricing">
+        <section className="landing-cta" id="pricing" data-reveal>
           <div className="landing-cta__copy">
             <h2>Ready to create your next presentation?</h2>
             <p>

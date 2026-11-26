@@ -3,7 +3,10 @@
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   background: var(--surface);
-  transition: border-color var(--motion-fast) var(--ease-standard);
+  transition:
+    transform var(--motion-base) var(--ease-out),
+    box-shadow var(--motion-base) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out);
 }
 
 .feature-card:hover {
@@ -19,6 +22,23 @@
   border: 1px solid var(--accent-border);
   border-radius: var(--radius-md);
   background: var(--accent-soft);
+  transition:
+    transform var(--motion-base) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .feature-card[data-visible="true"]:hover,
+  .feature-card:not([data-reveal]):hover {
+    transform: translate3d(0, -3px, 0);
+    box-shadow: var(--elev-card);
+    transition-delay: 0ms;
+  }
+
+  .feature-card:hover > span {
+    transform: scale(1.06);
+    border-color: var(--accent);
+  }
 }
 
 .feature-card h3 {

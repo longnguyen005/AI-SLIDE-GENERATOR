@@ -57,9 +57,14 @@
   font-weight: 500;
   cursor: pointer;
   transition:
-    background var(--motion-fast) var(--ease-standard),
-    border-color var(--motion-fast) var(--ease-standard),
-    color var(--motion-fast) var(--ease-standard);
+    background var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out),
+    color var(--motion-fast) var(--ease-out),
+    transform var(--motion-press) var(--ease-out);
+}
+
+.landing-theme-toggle:active {
+  transform: scale(0.97);
 }
 
 .landing-theme-toggle:hover {
@@ -97,6 +102,18 @@
     transparent 70%
   );
   pointer-events: none;
+  animation: deckai-glow-breath 9s ease-in-out infinite;
+}
+
+.landing-hero__stagger {
+  animation: deckai-rise-in var(--motion-enter) var(--ease-out) both;
+  animation-delay: calc(var(--hero-step, 0) * 55ms);
+}
+
+.landing-hero__showcase-wrap {
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
 .landing-eyebrow {
@@ -179,6 +196,7 @@
   background: var(--danger-soft);
   color: var(--danger-text);
   font-size: 13px;
+  animation: deckai-shake 180ms var(--ease-out);
 }
 
 .landing-stats {
@@ -258,6 +276,7 @@
 }
 
 .workflow-line {
+  position: relative;
   max-width: var(--container-max);
   margin: 0 auto;
   display: grid;
@@ -265,7 +284,27 @@
   gap: 16px;
 }
 
+.workflow-line::before {
+  content: "";
+  position: absolute;
+  top: 38px;
+  left: 48px;
+  right: 48px;
+  height: 1px;
+  background: linear-gradient(90deg, var(--accent-border), var(--border-strong), var(--accent-border));
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 680ms var(--ease-out) 120ms;
+  pointer-events: none;
+}
+
+.workflow-line[data-visible="true"]::before {
+  transform: scaleX(1);
+}
+
 .workflow-line article {
+  position: relative;
+  z-index: 1;
   display: grid;
   align-content: start;
   gap: 10px;
@@ -273,6 +312,19 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface);
+  transition:
+    transform var(--motion-base) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out),
+    box-shadow var(--motion-base) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .workflow-line article[data-visible="true"]:hover {
+    transform: translate3d(0, -3px, 0);
+    border-color: var(--border-strong);
+    box-shadow: var(--elev-card);
+    transition-delay: 0ms;
+  }
 }
 
 .workflow-line article > span {
@@ -365,7 +417,13 @@
   font-size: var(--text-sm);
   font-weight: 500;
   cursor: pointer;
-  transition: background var(--motion-fast) var(--ease-standard);
+  transition:
+    background var(--motion-fast) var(--ease-out),
+    transform var(--motion-press) var(--ease-out);
+}
+
+.landing-cta__demo:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .landing-cta__demo:hover:not(:disabled) {
@@ -442,6 +500,22 @@
   .landing-features__grid,
   .workflow-line {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .workflow-line::before {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-hero__glow,
+  .landing-hero__stagger {
+    animation: none !important;
+  }
+
+  .workflow-line::before {
+    transform: scaleX(1) !important;
+    transition: none !important;
   }
 }
 
