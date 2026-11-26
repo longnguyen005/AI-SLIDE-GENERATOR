@@ -1,12 +1,11 @@
 import { getOwnedDeck } from './deck.controller.js';
+import { VALID_LAYOUTS } from '../constants/layouts.js';
 import { Slide } from '../models/Slide.model.js';
 import { SlideVersion } from '../models/SlideVersion.model.js';
 import { generateOutline, generateSlides } from '../services/gemini.service.js';
 import { ApiError } from '../utils/ApiError.js';
 import { makeId } from '../utils/ids.js';
 import { routeParamObjectId } from '../utils/params.js';
-
-const VALID_LAYOUTS = new Set(['title', 'content', 'two_column', 'section', 'summary']);
 
 export async function generateDeckOutline(req, res) {
     const deck = await getOwnedDeck(routeParamObjectId(req.params.deckId, 'deckId'), req.user.id);
@@ -36,7 +35,10 @@ export async function updateOutline(req, res) {
             id: section.id || makeId(),
             title: section.title,
             summary: section.summary || '',
-            order: index + 1
+            order: index + 1,
+            ...(VALID_LAYOUTS.has(section.suggestedLayout)
+                ? { suggestedLayout: section.suggestedLayout }
+                : {})
         }))
     };
     deck.slideCount = deck.outline.sections.length;
@@ -52,7 +54,10 @@ export async function generateDeckSlides(req, res) {
         .map((section) => ({
             title: String(section.title),
             summary: section.summary ? String(section.summary) : undefined,
-            order: Number(section.order)
+            order: Number(section.order),
+            ...(VALID_LAYOUTS.has(section.suggestedLayout)
+                ? { suggestedLayout: section.suggestedLayout }
+                : {})
         }));
 
     if (sections.length === 0) {

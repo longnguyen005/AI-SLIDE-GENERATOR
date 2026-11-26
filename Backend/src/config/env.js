@@ -28,7 +28,7 @@ export function loadEnv(rawEnv = process.env) {
         corsOrigins,
         geminiApiKeys: splitCsv(rawEnv.GEMINI_API_KEYS || rawEnv.GEMINI_API_KEY || ''),
         geminiModels: splitCsv(
-            rawEnv.GEMINI_MODELS || 'gemini-2.0-flash,gemini-2.0-flash-lite,gemini-2.5-flash-lite'
+            rawEnv.GEMINI_MODELS || 'gemini-2.5-flash,gemini-2.5-flash-lite,gemini-2.0-flash'
         ),
         dnsServers: splitCsv(rawEnv.DNS_SERVERS || '')
     };

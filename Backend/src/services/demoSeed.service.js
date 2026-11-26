@@ -119,35 +119,40 @@ const OUTLINE_READY_SECTIONS = [
         title: 'Industrial Decarbonization Stalls Without Dispatchable 12-Hour Storage',
         summary:
             'Quantify peak-tariff exposure and intermittency losses facing manufacturing campuses relying on solar and wind.',
-        order: 1
+        order: 1,
+        suggestedLayout: 'title'
     },
     {
         id: 'demo-outline-sec-2',
         title: 'Modular Iron-Air Architecture Cuts Levelized Storage Cost by 58%',
         summary:
             'Explain how abundant earth-mineral chemistry eliminates thermal runaway risk and lithium supply volatility.',
-        order: 2
+        order: 2,
+        suggestedLayout: 'callout'
     },
     {
         id: 'demo-outline-sec-3',
         title: 'Commercial Traction: 48 MWh Contracted Across Three Logistics Hubs',
         summary:
             'Present signed multi-year energy-storage service agreements and 99.4% field availability from initial deployments.',
-        order: 3
+        order: 3,
+        suggestedLayout: 'metrics'
     },
     {
         id: 'demo-outline-sec-4',
         title: 'Hardware-Enabled Recurring Revenue With 46% Gross Margin at Scale',
         summary:
             'Break down upfront installation recovery, 15-year dispatch optimization software fees, and domestic tax-credit tailwinds.',
-        order: 4
+        order: 4,
+        suggestedLayout: 'two_column'
     },
     {
         id: 'demo-outline-sec-5',
         title: '$18M Series A Allocation to Commission Automated Module Line',
         summary:
             'Detail 24-month milestones to reach 250 MWh annual capacity and unlock project-finance debt facilities.',
-        order: 5
+        order: 5,
+        suggestedLayout: 'timeline'
     }
 ];
 
@@ -229,6 +234,22 @@ export async function ensureDemoUserAndDecks() {
             status: 'outline_ready',
             outline: { sections: OUTLINE_READY_SECTIONS }
         });
+    } else if (
+        outlineDeck.status === 'outline_ready' &&
+        Array.isArray(outlineDeck.outline?.sections) &&
+        outlineDeck.outline.sections.length === OUTLINE_READY_SECTIONS.length &&
+        outlineDeck.outline.sections.every((sec) => !sec.suggestedLayout)
+    ) {
+        outlineDeck.outline = {
+            sections: outlineDeck.outline.sections.map((sec, idx) => ({
+                id: sec.id || OUTLINE_READY_SECTIONS[idx].id,
+                title: sec.title,
+                summary: sec.summary || '',
+                order: sec.order || idx + 1,
+                suggestedLayout: OUTLINE_READY_SECTIONS[idx].suggestedLayout
+            }))
+        };
+        await outlineDeck.save();
     }
 
     return user;

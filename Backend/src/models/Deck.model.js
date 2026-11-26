@@ -1,9 +1,11 @@
 import mongoose, { Schema } from 'mongoose';
+import { SLIDE_LAYOUTS } from '../constants/layouts.js';
 const outlineSectionSchema = new Schema({
     id: { type: String, required: true },
     title: { type: String, required: true },
     summary: { type: String },
-    order: { type: Number, required: true }
+    order: { type: Number, required: true },
+    suggestedLayout: { type: String, enum: SLIDE_LAYOUTS }
 }, { _id: false });
 const deckSchema = new Schema({
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },

@@ -1,9 +1,14 @@
 import { z } from 'zod';
+import { SLIDE_LAYOUTS } from '../constants/layouts.js';
 
 const toneEnum = z.enum(['professional', 'academic', 'simple', 'persuasive']);
 const themeEnum = z.enum(['indigo', 'emerald', 'amber', 'coral']);
 const languageEnum = z.enum(['English', 'en']);
-const layoutEnum = z.enum(['title', 'content', 'two_column', 'section', 'summary']);
+const layoutEnum = z.enum(SLIDE_LAYOUTS);
+const optionalSuggestedLayout = z
+    .union([layoutEnum, z.literal('')])
+    .optional()
+    .transform((val) => (val ? val : undefined));
 const objectIdString = z.string().trim().regex(/^[0-9a-fA-F]{24}$/, 'Invalid ObjectId');
 
 const slideCountField = z
@@ -83,7 +88,8 @@ export const outlineSchema = z.object({
                     .min(1, 'Outline section title is required')
                     .max(200, 'Outline section title must be at most 200 characters'),
                 summary: z.string().trim().max(1000).optional().default(''),
-                order: z.number().int().min(1).max(10).optional()
+                order: z.number().int().min(1).max(10).optional(),
+                suggestedLayout: optionalSuggestedLayout
             })
         )
         .min(1, 'Outline must contain between 1 and 10 sections')
@@ -112,5 +118,8 @@ export const reorderSchema = z.object({
 });
 
 export const regenerateSchema = z.object({
-    instruction: z.string().trim().max(1000, 'Instruction must be at most 1000 characters').optional()
+    instruction: z.string().trim().max(1000, 'Instruction must be at most 1000 characters').optional(),
+    target: z.enum(['full', 'bullets', 'notes']).optional().default('full'),
+    allowLayoutChange: z.boolean().optional(),
+    preferredLayout: optionalSuggestedLayout
 });

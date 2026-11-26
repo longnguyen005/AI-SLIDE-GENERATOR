@@ -74,7 +74,8 @@ export async function duplicateDeck(req, res) {
             id: `${section.id || 'sec'}-copy-${idx + 1}`,
             title: section.title,
             summary: section.summary || '',
-            order: section.order || idx + 1
+            order: section.order || idx + 1,
+            ...(section.suggestedLayout ? { suggestedLayout: section.suggestedLayout } : {})
         }))
         : [];
 

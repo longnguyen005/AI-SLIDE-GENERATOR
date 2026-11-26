@@ -1,8 +1,88 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import { env } from '../config/env.js';
+import {
+    SLIDE_LAYOUTS,
+    VALID_LAYOUTS,
+    resolveEffectiveLayoutChange
+} from '../constants/layouts.js';
+import {
+    enforceOutlineDiversity,
+    enforceSlideDiversity,
+    formatBulletsForLayout,
+    generateSmartOutline,
+    generateSmartSlides,
+    regenerateSmartSlide
+} from './smartFallback.service.js';
 import { makeId } from '../utils/ids.js';
 
-const VALID_LAYOUTS = new Set(['title', 'content', 'two_column', 'section', 'summary']);
+export const OUTLINE_RESPONSE_SCHEMA = {
+    type: SchemaType.OBJECT,
+    properties: {
+        title: { type: SchemaType.STRING },
+        sections: {
+            type: SchemaType.ARRAY,
+            items: {
+                type: SchemaType.OBJECT,
+                properties: {
+                    title: { type: SchemaType.STRING },
+                    summary: { type: SchemaType.STRING },
+                    suggestedLayout: {
+                        type: SchemaType.STRING,
+                        format: 'enum',
+                        enum: SLIDE_LAYOUTS
+                    }
+                },
+                required: ['title', 'summary']
+            }
+        }
+    },
+    required: ['title', 'sections']
+};
+
+export const SLIDES_RESPONSE_SCHEMA = {
+    type: SchemaType.OBJECT,
+    properties: {
+        slides: {
+            type: SchemaType.ARRAY,
+            items: {
+                type: SchemaType.OBJECT,
+                properties: {
+                    title: { type: SchemaType.STRING },
+                    content: {
+                        type: SchemaType.ARRAY,
+                        items: { type: SchemaType.STRING }
+                    },
+                    speakerNotes: { type: SchemaType.STRING },
+                    layout: {
+                        type: SchemaType.STRING,
+                        format: 'enum',
+                        enum: SLIDE_LAYOUTS
+                    }
+                },
+                required: ['title', 'content', 'speakerNotes', 'layout']
+            }
+        }
+    },
+    required: ['slides']
+};
+
+export const REGENERATE_RESPONSE_SCHEMA = {
+    type: SchemaType.OBJECT,
+    properties: {
+        title: { type: SchemaType.STRING },
+        content: {
+            type: SchemaType.ARRAY,
+            items: { type: SchemaType.STRING }
+        },
+        speakerNotes: { type: SchemaType.STRING },
+        layout: {
+            type: SchemaType.STRING,
+            format: 'enum',
+            enum: SLIDE_LAYOUTS
+        }
+    },
+    required: ['title', 'content', 'speakerNotes', 'layout']
+};
 
 /* ── Model pool: every (key × model) combination ────────── */
 
@@ -12,6 +92,8 @@ for (const apiKey of env.geminiApiKeys) {
     for (const modelName of env.geminiModels) {
         defaultPool.push({
             label: `${modelName} (key …${apiKey.slice(-4)})`,
+            genAI,
+            modelName,
             instance: genAI.getGenerativeModel({ model: modelName })
         });
     }
@@ -21,9 +103,11 @@ let activePool = defaultPool;
 
 if (process.env.NODE_ENV !== 'test') {
     if (defaultPool.length) {
-        console.info(`[Gemini] Initialized ${defaultPool.length} model slots: ${defaultPool.map((p) => p.label).join(', ')}`);
+        console.info(
+            `[Gemini] Initialized ${defaultPool.length} model slots: ${defaultPool.map((p) => p.label).join(', ')}`
+        );
     } else {
-        console.warn('[Gemini] No API keys configured — AI features will use stub responses.');
+        console.warn('[Gemini] No API keys configured — AI features will use smart fallback synthesis.');
     }
 }
 
@@ -103,18 +187,19 @@ function friendlyError(err) {
     return err?.message || 'An unexpected AI error occurred. Please try again.';
 }
 
-/**
- * Attempt the prompt across every (key × model) slot with retries and JSON extraction.
- * - Each slot gets up to 2 attempts with exponential backoff.
- * - Malformed JSON (SyntaxError) and transient upstream errors trigger retry / slot fallback.
- * - Non-retryable errors are thrown immediately with a friendly message.
- */
 const MAX_RETRIES_PER_SLOT = 2;
 const BASE_DELAY_MS = process.env.NODE_ENV === 'test' ? 1 : 1500;
 
 export async function callWithFallback(prompt, options = {}) {
     const slots = options.slots ?? activePool;
     const baseDelayMs = options.baseDelayMs ?? BASE_DELAY_MS;
+    const generationConfig = options.responseSchema
+        ? {
+              responseMimeType: 'application/json',
+              responseSchema: options.responseSchema,
+              ...(options.temperature !== undefined ? { temperature: options.temperature } : {})
+          }
+        : undefined;
 
     if (slots.length === 0) {
         return null;
@@ -123,7 +208,8 @@ export async function callWithFallback(prompt, options = {}) {
     let lastError;
 
     for (let i = 0; i < slots.length; i += 1) {
-        const { label, instance } = slots[i];
+        const slot = slots[i];
+        const { label, instance } = slot;
 
         for (let attempt = 0; attempt < MAX_RETRIES_PER_SLOT; attempt += 1) {
             try {
@@ -134,7 +220,25 @@ export async function callWithFallback(prompt, options = {}) {
                     }
                 }
 
-                const result = await instance.generateContent(prompt);
+                let result;
+                if (slot.genAI && slot.modelName && (generationConfig || options.systemInstruction)) {
+                    const configuredModel = slot.genAI.getGenerativeModel({
+                        model: slot.modelName,
+                        ...(options.systemInstruction
+                            ? { systemInstruction: options.systemInstruction }
+                            : {}),
+                        ...(generationConfig ? { generationConfig } : {})
+                    });
+                    result = await configuredModel.generateContent(prompt);
+                } else {
+                    result = await instance.generateContent(prompt, {
+                        ...(generationConfig ? { generationConfig } : {}),
+                        ...(options.systemInstruction
+                            ? { systemInstruction: options.systemInstruction }
+                            : {})
+                    });
+                }
+
                 const rawText =
                     typeof result?.response?.text === 'function'
                         ? result.response.text()
@@ -174,122 +278,191 @@ export async function callWithFallback(prompt, options = {}) {
 /* ── Public API ───────────────────────────────────────────── */
 
 export async function generateOutline(input) {
-    const parsed = await callWithFallback(`
+    const targetCount = Math.min(10, Math.max(1, Number(input.slideCount) || 5));
+    const parsed = await callWithFallback(
+        `
 Return strict JSON only. Do not wrap in markdown.
-Shape:
-{"title":"string","sections":[{"title":"string","summary":"string"}]}
-
-Create a premium presentation outline with exactly ${input.slideCount} sections.
+Create a premium executive presentation outline with exactly ${targetCount} sections.
 Topic: "${input.topic}"
 Description/context: "${input.description || ''}"
 Language: ${input.language || 'English'}
 Tone: ${input.tone}
 
+Available slide layouts (assign suggestedLayout for each section):
+- "title": Opening cover slide (use for section 1)
+- "callout": Core thesis spotlight banner + 2-3 supporting pillars
+- "metrics": KPI scorecard grid with quantifiable figures ("34% Faster | Context")
+- "two_column": Side-by-side comparison / tradeoffs ("Driver: ..." vs "Guardrail: ...")
+- "timeline": Phased roadmap / sequential milestones ("Phase 1: ...")
+- "section": Chapter divider transition
+- "content": Focused insight bullets + visual panel
+- "summary": Closing decisions & executive takeaways (use for final section when >= 3 slides)
+
 Requirements:
-- Build a strong narrative arc: context, problem/opportunity, evidence, implications, recommendations, closing takeaway.
-- Use action-oriented section titles, not generic labels like "Introduction" unless paired with a specific insight.
-- Each summary must be 2-3 concise sentences with specific angles, examples, or decision points.
-- Avoid vague filler such as "discuss the topic" or "cover key points".
-- Make the outline presentation-ready for a polished SaaS/business deck.
-`);
+- Build a compelling narrative arc across diverse visual archetypes; never repeat the same middle layout back-to-back.
+- Use sharp, insight-driven section titles rather than generic labels like "Introduction".
+- Each summary must be 2-3 crisp sentences with concrete angles, evidence, or decision points.
+`,
+        {
+            responseSchema: OUTLINE_RESPONSE_SCHEMA,
+            temperature: 0.55
+        }
+    );
 
     if (!parsed) {
-        return {
-            title: input.topic,
-            sections: Array.from({ length: input.slideCount }, (_, index) => ({
-                id: makeId(),
-                title:
-                    index === 0
-                        ? `Why ${input.topic} matters now`
-                        : `${input.topic} - Strategic point ${index + 1}`,
-                summary: `Frame one specific ${input.tone} insight, include supporting context, and end with a presenter-ready takeaway.`,
-                order: index + 1
-            }))
-        };
+        return generateSmartOutline(input);
     }
 
     const rawSections = Array.isArray(parsed.sections) ? parsed.sections : [];
+    const padded = Array.from({ length: targetCount }, (_, index) => {
+        const candidate = rawSections[index];
+        return {
+            id: makeId(),
+            title: String(candidate?.title || `${input.topic} — Key Angle ${index + 1}`),
+            summary: String(
+                candidate?.summary ||
+                    `Synthesize concrete ${input.tone} evidence and implications for ${input.topic}.`
+            ),
+            order: index + 1,
+            suggestedLayout: VALID_LAYOUTS.has(candidate?.suggestedLayout)
+                ? candidate.suggestedLayout
+                : undefined
+        };
+    });
+
     return {
         title: String(parsed.title || input.topic),
-        sections: rawSections.slice(0, input.slideCount).map((section, index) => ({
-            id: makeId(),
-            title: String(section.title || `Slide ${index + 1}`),
-            summary: String(section.summary || ''),
-            order: index + 1
-        }))
+        sections: enforceOutlineDiversity(padded)
     };
 }
 
 export async function generateSlides(deck, outline) {
-    const parsed = await callWithFallback(`
+    const parsed = await callWithFallback(
+        `
 Return strict JSON only. Do not wrap in markdown.
-Shape:
-{"slides":[{"title":"string","content":["string"],"speakerNotes":"string","layout":"title|content|two_column|section|summary"}]}
-
-Create exactly ${outline.length} polished presentation slides.
+Create exactly ${outline.length} executive presentation slides across our 8-layout archetype system.
 Deck topic: "${deck.topic}"
 Deck description/context: "${deck.description || ''}"
 Language: ${deck.language || 'English'}
 Tone: ${deck.tone}
-Outline: ${JSON.stringify(outline)}
+Outline (respect each section's suggestedLayout when provided): ${JSON.stringify(outline)}
 
-Slide quality requirements:
-- Make every slide title an insight headline, not a topic label.
-- Content must be 3-5 concise bullets per slide, 9-16 words each.
-- Bullets should include concrete claims, examples, tradeoffs, recommendations, or measurable outcomes when possible.
-- Avoid generic filler, repeated phrasing, and textbook definitions.
-- Use a clear narrative flow from opening context to final recommendation.
-- Vary layout across the deck: first slide should be "title", final slide should be "summary", and middle slides should mix "content" and "two_column" when useful.
-- Speaker notes must be 2-4 sentences with presenter guidance, transitions, and emphasis points.
-- Keep text readable on a slide; do not create long paragraphs inside content bullets.
-- Write bullets so they can pair with a visual metaphor, light data panel, or icon-based illustration on the slide.
-- When useful, include one bullet that suggests a concrete visual angle such as trend, contrast, timeline, system map, or impact signal, but keep it audience-facing.
-`);
+Layout formatting conventions (content is string[]):
+- "title": 3 framing highlights; content[0] is the hero executive lead sentence.
+- "metrics": 3-4 KPI stat strings formatted strictly as "Stat Figure | Crisp explanation" (e.g. "34% Faster | Support cycle time dropped from 38m to 25m").
+- "timeline": 3-4 sequential phases formatted strictly as "Stage Label: Milestone action" (e.g. "Phase 1 (Days 1-30): Audit IAM roles and launch pilot").
+- "two_column": 4 or 6 balanced strings using shared prefixes per half (e.g. first half "Velocity Driver: ...", second half "Risk Guardrail: ...").
+- "callout": content[0] is a bold core thesis statement; content[1..3] are supporting proof pillars.
+- "section": 2-3 chapter transition cues.
+- "content": 3-5 concise insight bullets (9-16 words each).
+- "summary": 3-5 actionable closing takeaways or sign-off decisions.
 
-    if (!parsed) {
-        return outline.map((section, index) => ({
-            slideNumber: index + 1,
-            title: section.title,
-            content: [
-                section.summary || `Frame the core insight behind ${section.title}.`,
-                `Add one concrete example, implication, or metric relevant to ${deck.topic}.`,
-                'End with a clear audience takeaway or next action.'
-            ],
-            speakerNotes: `Present the insight, explain why it matters for ${deck.topic}, then connect it to the next slide.`,
-            layout: index === 0 ? 'title' : index === outline.length - 1 ? 'summary' : 'content'
-        }));
-    }
-
-    return Array.isArray(parsed.slides) ? parsed.slides : [];
-}
-
-export async function regenerateSlide(input) {
-    const preservedLayout = VALID_LAYOUTS.has(input.currentSlide?.layout) ? input.currentSlide.layout : null;
-    const targetLayout = preservedLayout || 'content';
-    const language = input.language || 'English';
-
-    const parsed = await callWithFallback(
-        `Return strict JSON only. Do not wrap in markdown. Shape: {"title":"string","content":["string"],"speakerNotes":"string","layout":"${targetLayout}"}. Regenerate one slide in ${language} for deck topic "${input.topic}", tone "${input.tone}", preserving layout "${targetLayout}". Current slide: ${JSON.stringify(input.currentSlide)}. Previous title: ${input.previousTitle || ''}. Next title: ${input.nextTitle || ''}. Instruction: ${input.instruction || 'Improve clarity'}.`
+Quality rules:
+- Never use consecutive identical middle layouts; vary visual rhythm across the deck.
+- Write concrete claims, tradeoffs, benchmarks, and presenter-ready 2-4 sentence speakerNotes.
+`,
+        {
+            responseSchema: SLIDES_RESPONSE_SCHEMA,
+            temperature: 0.55
+        }
     );
 
     if (!parsed) {
+        return generateSmartSlides(deck, outline);
+    }
+
+    const rawSlides = Array.isArray(parsed.slides) ? parsed.slides : [];
+    return enforceSlideDiversity(rawSlides, outline, deck);
+}
+
+export async function regenerateSlide(input) {
+    const target = ['full', 'bullets', 'notes'].includes(input.target) ? input.target : 'full';
+    const preservedLayout = VALID_LAYOUTS.has(input.currentSlide?.layout)
+        ? input.currentSlide.layout
+        : 'content';
+    const language = input.language || 'English';
+    const instruction = input.instruction || 'Improve executive clarity and concrete impact';
+
+    const { canChangeLayout, requestedLayout } = resolveEffectiveLayoutChange({
+        target,
+        allowLayoutChange: input.allowLayoutChange,
+        preferredLayout: input.preferredLayout,
+        instruction
+    });
+
+    const layoutDirective = canChangeLayout
+        ? requestedLayout
+            ? `Switch layout to "${requestedLayout}" and format content[] using "${requestedLayout}" conventions.`
+            : `Choose the best layout among ${SLIDE_LAYOUTS.join(', ')} (currently "${preservedLayout}").`
+        : `Preserve layout "${preservedLayout}".`;
+
+    const scopeDirective =
+        target === 'notes'
+            ? 'Rewrite speakerNotes ONLY (3-4 coaching sentences with transitions from previousTitle to nextTitle); keep title, content, and layout unchanged.'
+            : target === 'bullets'
+              ? 'Rewrite content[] bullets ONLY; keep title and speakerNotes unchanged.'
+              : 'Regenerate title, content[], and speakerNotes cohesively.';
+
+    const parsed = await callWithFallback(
+        `Return strict JSON only. Do not wrap in markdown. Regenerate one slide in ${language} for deck topic "${input.topic}", context "${input.description || ''}", tone "${input.tone}". ${layoutDirective} ${scopeDirective} Layout formatting rules: metrics="Stat | Detail", timeline="Phase N: Detail", two_column="Left Prefix: ... / Right Prefix: ...", callout="content[0]=thesis, content[1..3]=pillars". Current slide: ${JSON.stringify(input.currentSlide)}. Previous title: ${input.previousTitle || ''}. Next title: ${input.nextTitle || ''}. Instruction: ${instruction}.`,
+        {
+            responseSchema: REGENERATE_RESPONSE_SCHEMA,
+            temperature: 0.6
+        }
+    );
+
+    if (!parsed) {
+        return regenerateSmartSlide({
+            ...input,
+            target,
+            instruction
+        });
+    }
+
+    const finalLayout = canChangeLayout
+        ? requestedLayout || (VALID_LAYOUTS.has(parsed.layout) ? parsed.layout : preservedLayout)
+        : preservedLayout;
+
+    if (target === 'notes') {
         return {
-            ...input.currentSlide,
-            layout: targetLayout,
-            title: input.currentSlide.title,
-            content: input.currentSlide.content.map((line) => `${line}`),
-            speakerNotes: `${input.currentSlide.speakerNotes || ''}\nRegenerated with instruction: ${input.instruction || 'Polish the slide.'}`.trim()
+            title: String(input.currentSlide?.title || 'Untitled slide'),
+            content: Array.isArray(input.currentSlide?.content)
+                ? input.currentSlide.content.map(String)
+                : [],
+            speakerNotes: String(parsed.speakerNotes || input.currentSlide?.speakerNotes || ''),
+            layout: preservedLayout
+        };
+    }
+
+    let nextContent = Array.isArray(parsed.content) && parsed.content.length > 0
+        ? parsed.content.map(String)
+        : Array.isArray(input.currentSlide?.content)
+          ? input.currentSlide.content.map(String)
+          : [];
+
+    if (
+        (canChangeLayout && finalLayout !== preservedLayout) ||
+        nextContent.length === 0
+    ) {
+        nextContent = formatBulletsForLayout(nextContent, finalLayout, parsed.title || input.currentSlide?.title, {
+            topic: input.topic,
+            description: input.description
+        });
+    }
+
+    if (target === 'bullets') {
+        return {
+            title: String(input.currentSlide?.title || 'Untitled slide'),
+            content: nextContent,
+            speakerNotes: String(input.currentSlide?.speakerNotes ?? ''),
+            layout: finalLayout
         };
     }
 
     return {
         title: String(parsed.title || input.currentSlide?.title || 'Untitled slide'),
-        content: Array.isArray(parsed.content)
-            ? parsed.content.map(String)
-            : Array.isArray(input.currentSlide?.content)
-              ? input.currentSlide.content.map(String)
-              : [],
+        content: nextContent,
         speakerNotes: String(parsed.speakerNotes ?? input.currentSlide?.speakerNotes ?? ''),
-        layout: preservedLayout || (VALID_LAYOUTS.has(parsed.layout) ? parsed.layout : 'content')
+        layout: finalLayout
     };
 }

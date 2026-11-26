@@ -1,12 +1,11 @@
 import { getOwnedDeck } from './deck.controller.js';
+import { VALID_LAYOUTS } from '../constants/layouts.js';
 import { Deck } from '../models/Deck.model.js';
 import { Slide } from '../models/Slide.model.js';
 import { SlideVersion } from '../models/SlideVersion.model.js';
 import { regenerateSlide as regenerateWithAi } from '../services/gemini.service.js';
 import { ApiError } from '../utils/ApiError.js';
 import { routeParamObjectId } from '../utils/params.js';
-
-const VALID_LAYOUTS = new Set(['title', 'content', 'two_column', 'section', 'summary']);
 
 async function getOwnedSlide(slideId, userId) {
     const slide = await Slide.findById(slideId);
@@ -176,27 +175,41 @@ export async function regenerateSlide(req, res) {
         layout: slide.layout
     };
 
+    const target = req.body.target || 'full';
     const regenerated = await regenerateWithAi({
         topic: deck.topic,
+        description: deck.description,
         language: deck.language,
         tone: deck.tone,
         previousTitle: neighbors[index - 1]?.title,
         nextTitle: neighbors[index + 1]?.title,
         instruction: req.body.instruction,
+        target,
+        allowLayoutChange: req.body.allowLayoutChange,
+        preferredLayout: req.body.preferredLayout,
         currentSlide: previousSnapshot
     });
+
+    const fallbackReason = req.body.preferredLayout
+        ? `Convert slide layout to ${req.body.preferredLayout}`
+        : target === 'notes'
+          ? 'AI speaker notes rewrite'
+          : target === 'bullets'
+            ? 'AI bullet points rewrite'
+            : 'AI regeneration';
 
     const versionNumber = await nextSlideVersionNumber(slide._id);
     await SlideVersion.create({
         slideId: slide._id,
         ...previousSnapshot,
         versionNumber,
-        reason: req.body.instruction || 'AI regeneration'
+        reason: req.body.instruction || fallbackReason
     });
 
     slide.title = regenerated.title || slide.title;
     slide.content = Array.isArray(regenerated.content) ? regenerated.content : slide.content;
-    slide.speakerNotes = regenerated.speakerNotes || slide.speakerNotes;
+    slide.speakerNotes =
+        regenerated.speakerNotes !== undefined ? regenerated.speakerNotes : slide.speakerNotes;
     slide.layout = VALID_LAYOUTS.has(regenerated.layout) ? regenerated.layout : slide.layout;
     await slide.save();
 

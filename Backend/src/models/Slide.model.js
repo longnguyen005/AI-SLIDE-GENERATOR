@@ -1,4 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
+import { SLIDE_LAYOUTS } from '../constants/layouts.js';
 const slideSchema = new Schema({
     deckId: { type: Schema.Types.ObjectId, ref: 'Deck', required: true, index: true },
     slideNumber: { type: Number, required: true },
@@ -7,7 +8,7 @@ const slideSchema = new Schema({
     speakerNotes: { type: String, default: '' },
     layout: {
         type: String,
-        enum: ['title', 'content', 'two_column', 'section', 'summary'],
+        enum: SLIDE_LAYOUTS,
         default: 'content'
     }
 }, { timestamps: true });
