@@ -6,6 +6,7 @@ import Button from '../../components/Button/Button';
 import SlideCanvas from '../../components/SlideCanvas/SlideCanvas';
 import RegenerateModal from '../../components/RegenerateModal/RegenerateModal';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { api } from '../../service/apiClient';
 import './EditorPage.css';
 
@@ -43,6 +44,7 @@ function layoutIcon(layout) {
 export default function EditorPage() {
   const { deckId } = useParams();
   const { user } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
 
   const [deck, setDeck] = useState(null);
   const [slides, setSlides] = useState([]);
@@ -375,12 +377,27 @@ export default function EditorPage() {
             </Link>
             <div className="editor-topbar__titles">
               <strong>{deckTitle}</strong>
-              <small>
-                {loading
-                  ? 'Loading slides...'
-                  : !deck
-                    ? 'Presentation unavailable'
-                    : `${slides.length} ${slides.length === 1 ? 'slide' : 'slides'} • ${isCurrentDraft ? 'Unsaved edits' : 'All changes saved'}`}
+              <small className="editor-topbar__meta">
+                {loading ? (
+                  'Loading slides...'
+                ) : !deck ? (
+                  'Presentation unavailable'
+                ) : (
+                  <>
+                    <span>
+                      {slides.length} {slides.length === 1 ? 'slide' : 'slides'}
+                    </span>
+                    <span className="editor-topbar__sep" aria-hidden="true">
+                      •
+                    </span>
+                    <span
+                      className={`editor-status ${isCurrentDraft ? 'editor-status--unsaved' : 'editor-status--saved'}`}
+                    >
+                      <span className="editor-status__dot" aria-hidden="true" />
+                      {isCurrentDraft ? 'Unsaved edits' : 'All changes saved'}
+                    </span>
+                  </>
+                )}
               </small>
             </div>
           </div>
@@ -408,6 +425,15 @@ export default function EditorPage() {
             >
               {saving ? 'Saving...' : 'Save changes'}
             </Button>
+            <button
+              type="button"
+              className="editor-topbar__theme-toggle"
+              onClick={toggleTheme}
+              aria-label="Toggle color theme"
+              title={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+            >
+              <Icon name={isDark ? 'sun' : 'moon'} size={17} />
+            </button>
             <span className="editor-avatar" title={user?.email || 'Account'}>
               {avatar}
             </span>

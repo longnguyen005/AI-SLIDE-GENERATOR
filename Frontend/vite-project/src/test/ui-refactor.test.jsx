@@ -372,4 +372,112 @@ describe('DeckAI × Open Design UI Refactor', () => {
     expect(savedSections).toHaveLength(6);
     expect(savedSections[4].title).toBe('Section 5');
   });
+
+  it('renders real slide titles in PreviewPage filmstrip, handles empty-bullet slides cleanly, and switches active slide', async () => {
+    globalThis.fetch = vi.fn().mockRejectedValue(new TypeError('Offline'));
+    await api.loginDemo();
+    await api.createSlide('demo-deck-ready', {
+      title: 'Appendix: Empty Content Edge Case',
+      content: [],
+      speakerNotes: '',
+      layout: 'content',
+    });
+
+    const { unmount } = render(
+      <MemoryRouter initialEntries={['/preview/demo-deck-ready']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByRole('heading', { name: /presentation preview/i })).toBeInTheDocument();
+
+    const fourthThumb = screen.getByRole('button', {
+      name: /Go to slide 4: Balancing Rapid Experimentation Against Zero-Trust Security Controls/i,
+    });
+    fireEvent.click(fourthThumb);
+
+    expect(
+      screen.getByRole('heading', {
+        name: 'Balancing Rapid Experimentation Against Zero-Trust Security Controls',
+      })
+    ).toBeInTheDocument();
+    expect(screen.getByText('4 / 6')).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /Go to slide 6: Appendix: Empty Content Edge Case/i })
+    );
+    expect(screen.getByText(/no slide content yet/i)).toBeInTheDocument();
+
+    unmount();
+
+    const longSlideTitle = `${'Zero-Trust Telemetry Architecture '.repeat(7)}`.slice(0, 200);
+    await api.createSlide('demo-deck-ready', {
+      title: longSlideTitle,
+      content: [],
+      speakerNotes: '',
+      layout: 'two_column',
+    });
+    await api.createSlide('demo-deck-ready', {
+      title: '   ',
+      content: [],
+      speakerNotes: '',
+      layout: 'summary',
+    });
+
+    const { unmount: unmountEdgePreview } = render(
+      <MemoryRouter initialEntries={['/preview/demo-deck-ready']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(
+      await screen.findByRole('button', { name: `Go to slide 7: ${longSlideTitle}` })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Go to slide 8: Untitled slide' })
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/undefined/i)).not.toBeInTheDocument();
+
+    unmountEdgePreview();
+
+    render(
+      <MemoryRouter initialEntries={['/editor/demo-deck-ready']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(
+      await screen.findByText('Enterprise AI Copilots: 2026 Rollout Blueprint')
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /toggle color theme/i }));
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(localStorage.getItem('deckai_theme')).toBe('dark');
+  });
+
+  it('eliminates forbidden default Tailwind indigo hex literals across all component and page CSS files', async () => {
+    const fs = await import('node:fs');
+    const path = await import('node:path');
+    const srcDir = path.resolve(import.meta.dirname, '..');
+
+    function collectCssFiles(dir) {
+      return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) return collectCssFiles(full);
+        return entry.name.endsWith('.css') && entry.name !== 'tokens.css' ? [full] : [];
+      });
+    }
+
+    const forbiddenIndigo = /#(6366f1|4f46e5|4338ca|3730a3|8b5cf6|7c3aed|a855f7)\b/i;
+    const offenders = [];
+
+    for (const filePath of collectCssFiles(srcDir)) {
+      const content = fs.readFileSync(filePath, 'utf8');
+      const match = content.match(forbiddenIndigo);
+      if (match) {
+        offenders.push(`${path.relative(srcDir, filePath)} (${match[0]})`);
+      }
+    }
+
+    expect(offenders).toEqual([]);
+  });
 });

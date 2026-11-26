@@ -24,7 +24,7 @@ export default function PreviewPage() {
   const activeSlide = slides[index];
 
   useEffect(() => {
-    if (!deckId) return;
+    if (!deckId) return undefined;
     let active = true;
 
     async function loadSlides() {
@@ -49,12 +49,15 @@ export default function PreviewPage() {
 
   useEffect(() => {
     const handler = (event) => {
+      if (modalOpen) return;
+      const tag = event.target?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || event.target?.isContentEditable) return;
       if (event.key === 'ArrowLeft') setIndex((value) => Math.max(0, value - 1));
       if (event.key === 'ArrowRight') setIndex((value) => Math.min(slides.length - 1, value + 1));
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [slides.length]);
+  }, [slides.length, modalOpen]);
 
   const enterFullscreen = async () => {
     try {
@@ -67,7 +70,9 @@ export default function PreviewPage() {
   const regenerate = async (instruction) => {
     if (!activeSlide?._id) return;
     const result = await api.regenerateSlide(activeSlide._id, instruction);
-    setSlides((current) => current.map((slide) => (slide._id === result.slide._id ? result.slide : slide)));
+    setSlides((current) =>
+      current.map((slide) => (slide._id === result.slide._id ? result.slide : slide))
+    );
     setMessage('Slide regenerated successfully!');
   };
 
@@ -108,59 +113,138 @@ export default function PreviewPage() {
           }
         />
 
-        {message && <div className="preview-message">{message}</div>}
+        {message && (
+          <div className="preview-message" role="status">
+            {message}
+          </div>
+        )}
         {loading && <div className="preview-empty">Loading slides...</div>}
 
         {!loading && !activeSlide && (
           <div className="preview-empty">
             <strong>No slides found</strong>
             <p>Generate slides for this deck before opening preview.</p>
-            <Button to="/dashboard" variant="outline">Back to dashboard</Button>
+            <Button to="/dashboard" variant="outline">
+              Back to dashboard
+            </Button>
           </div>
         )}
 
         {!loading && activeSlide && (
           <>
-            <SlideCanvas slide={activeSlide} />
+            <div className="preview-stage">
+              <SlideCanvas slide={activeSlide} />
+            </div>
 
             <div className="preview-controls">
-              <div>
-                <Button variant="outline" icon="arrowLeft" onClick={previous} disabled={index === 0}>Previous</Button>
-                <span className="preview-counter">{index + 1} / {slides.length}</span>
-                <Button iconRight="arrowRight" onClick={next} disabled={index === slides.length - 1}>Next</Button>
+              <div className="preview-controls__nav">
+                <Button
+                  type="button"
+                  variant="outline"
+                  icon="arrowLeft"
+                  onClick={previous}
+                  disabled={index === 0}
+                >
+                  Previous
+                </Button>
+                <span className="preview-counter">
+                  {index + 1} / {slides.length}
+                </span>
+                <Button
+                  type="button"
+                  iconRight="arrowRight"
+                  onClick={next}
+                  disabled={index === slides.length - 1}
+                >
+                  Next
+                </Button>
               </div>
-              <span className="preview-hint">Use arrow keys to navigate</span>
-              <Button variant="outline" icon="fullscreen" onClick={enterFullscreen}>Full Screen</Button>
+
+              <div className="preview-controls__right">
+                <span className="preview-hint">
+                  <span className="preview-hint__keys" aria-hidden="true">
+                    <kbd>&larr;</kbd>
+                    <kbd>&rarr;</kbd>
+                  </span>
+                  <span>Use arrow keys to navigate</span>
+                </span>
+                <Button type="button" variant="outline" icon="fullscreen" onClick={enterFullscreen}>
+                  Full Screen
+                </Button>
+              </div>
             </div>
 
             <section className="speaker-notes">
-              <button className="speaker-notes__header" onClick={() => setNotesOpen((value) => !value)}>
+              <button
+                type="button"
+                className="speaker-notes__header"
+                aria-expanded={notesOpen}
+                onClick={() => setNotesOpen((value) => !value)}
+              >
                 <span>Speaker Notes</span>
                 <Icon name="chevronDown" className={notesOpen ? 'is-open' : ''} />
               </button>
-              {notesOpen && <div className="speaker-notes__body">{activeSlide.speakerNotes || 'No speaker notes yet.'}</div>}
+              {notesOpen && (
+                <div className="speaker-notes__body">
+                  {activeSlide.speakerNotes || 'No speaker notes yet.'}
+                </div>
+              )}
             </section>
 
             <section className="export-card">
-              <div><strong>Export your presentation</strong><p>Ready to share? Generate a production-ready PowerPoint file.</p></div>
+              <div className="export-card__copy">
+                <strong>Export your presentation</strong>
+                <p>Ready to share? Generate a production-ready PowerPoint file.</p>
+              </div>
               <div className="export-card__actions">
-                <Button variant="secondary" icon="wand" onClick={() => setModalOpen(true)}>Regenerate slide</Button>
-                <Button icon="download" onClick={exportPptx} disabled={exporting}>{exporting ? 'Exporting...' : 'Export PPTX'}</Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  icon="wand"
+                  onClick={() => setModalOpen(true)}
+                >
+                  Regenerate slide
+                </Button>
+                <Button type="button" icon="download" onClick={exportPptx} disabled={exporting}>
+                  {exporting ? 'Exporting...' : 'Export PPTX'}
+                </Button>
               </div>
             </section>
 
-            <div className="preview-thumbnails">
-              {slides.map((slide, slideIndex) => (
-                <button key={slide._id} className={slideIndex === index ? 'is-active' : ''} onClick={() => setIndex(slideIndex)}>
-                  <span /><span /><span />
-                  <small>{slideIndex + 1}</small>
-                </button>
-              ))}
+            <div className="preview-thumbnails" role="group" aria-label="Slide filmstrip">
+              {slides.map((slide, slideIndex) => {
+                const slideTitle = String(slide?.title || '').trim() || 'Untitled slide';
+                const layoutLabel = String(slide?.layout || 'content').replace('_', ' ');
+                const isActive = slideIndex === index;
+
+                return (
+                  <button
+                    type="button"
+                    key={slide._id || `slide-${slideIndex}`}
+                    className={isActive ? 'is-active' : ''}
+                    onClick={() => setIndex(slideIndex)}
+                    aria-label={`Go to slide ${slideIndex + 1}: ${slideTitle}`}
+                    aria-current={isActive ? 'true' : undefined}
+                  >
+                    <span className="preview-thumb__head">
+                      <span className="preview-thumb__badge">
+                        {String(slideIndex + 1).padStart(2, '0')}
+                      </span>
+                      <em className="preview-thumb__layout">{layoutLabel}</em>
+                    </span>
+                    <strong className="preview-thumb__title">{slideTitle}</strong>
+                  </button>
+                );
+              })}
             </div>
           </>
         )}
       </main>
-      <RegenerateModal open={modalOpen} onClose={() => setModalOpen(false)} onRegenerate={regenerate} />
+      <RegenerateModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onRegenerate={regenerate}
+      />
     </div>
   );
 }
