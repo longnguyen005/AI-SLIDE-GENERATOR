@@ -15,6 +15,7 @@ export default function DashboardPage() {
   const [exportCount, setExportCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [duplicatingId, setDuplicatingId] = useState('');
   const [deletingId, setDeletingId] = useState('');
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(true);
@@ -87,6 +88,23 @@ export default function DashboardPage() {
       return haystack.includes(query);
     });
   }, [decks, searchQuery, statusFilter]);
+
+  const handleDuplicateDeck = async (deck) => {
+    const deckId = deck._id || deck.id;
+    if (!deckId || duplicatingId || deletingId) return;
+    setDuplicatingId(deckId);
+    setNotice('');
+    try {
+      const result = await api.duplicateDeck(deckId);
+      if (result?.deck) {
+        setDecks((prev) => [result.deck, ...prev]);
+      }
+    } catch (error) {
+      setNotice(error.message || 'Failed to duplicate deck.');
+    } finally {
+      setDuplicatingId('');
+    }
+  };
 
   const handleDeleteDeck = async (deck) => {
     const deckId = deck._id || deck.id;
@@ -188,6 +206,8 @@ export default function DashboardPage() {
                   deck={deck}
                   selected={index === 0 && !hasActiveFilter}
                   staggerIndex={Math.min(index, 7)}
+                  onDuplicate={handleDuplicateDeck}
+                  duplicating={duplicatingId === (deck._id || deck.id)}
                   onDelete={handleDeleteDeck}
                   deleting={deletingId === (deck._id || deck.id)}
                 />

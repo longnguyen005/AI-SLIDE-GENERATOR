@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import Sidebar from '../../components/SideBar/SideBar';
 import Icon from '../../components/Icon/Icon';
 import Button from '../../components/Button/Button';
 import SlideCanvas from '../../components/SlideCanvas/SlideCanvas';
 import RegenerateModal from '../../components/RegenerateModal/RegenerateModal';
+import { DECK_THEME_OPTIONS, normalizeDeckTheme } from '../../constants/deckThemes';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { api } from '../../service/apiClient';
@@ -50,7 +51,11 @@ export default function EditorPage() {
   const [slides, setSlides] = useState([]);
   const [activeSlideId, setActiveSlideId] = useState(null);
   const [slideDir, setSlideDir] = useState(0);
-  const [draft, setDraft] = useState(null);
+  const [draftsBySlideId, setDraftsBySlideId] = useState({});
+
+  const [isRenamingDeck, setIsRenamingDeck] = useState(false);
+  const [deckTitleInput, setDeckTitleInput] = useState('');
+  const [renamingDeck, setRenamingDeck] = useState(false);
 
   const [loading, setLoading] = useState(Boolean(deckId));
   const [saving, setSaving] = useState(false);
@@ -74,6 +79,7 @@ export default function EditorPage() {
       setLoading(true);
       setErrorMessage('');
       setToast('');
+      setIsRenamingDeck(false);
       try {
         const [deckResult, slidesResult] = await Promise.all([
           api.getDeck(deckId),
@@ -84,13 +90,13 @@ export default function EditorPage() {
         setDeck(deckResult.deck || null);
         setSlides(loadedSlides);
         setActiveSlideId(loadedSlides[0]?._id || null);
-        setDraft(null);
+        setDraftsBySlideId({});
       } catch (error) {
         if (active) {
           setDeck(null);
           setSlides([]);
           setActiveSlideId(null);
-          setDraft(null);
+          setDraftsBySlideId({});
           setErrorMessage(error.message || 'Unable to load deck editor.');
         }
       } finally {
@@ -107,6 +113,7 @@ export default function EditorPage() {
   }, [deckId]);
 
   const avatar = useMemo(() => initials(user?.fullName || user?.email || ''), [user]);
+  const deckTheme = normalizeDeckTheme(deck?.theme);
 
   const activeIndex = useMemo(() => {
     if (!slides.length) return -1;
@@ -115,15 +122,19 @@ export default function EditorPage() {
   }, [slides, activeSlideId]);
 
   const activeSlide = activeIndex >= 0 ? slides[activeIndex] : null;
-  const isCurrentDraft = Boolean(activeSlide && draft && draft.slideId === activeSlide._id);
+  const activeDraft = activeSlide ? draftsBySlideId[activeSlide._id] || null : null;
+  const isCurrentDraft = Boolean(activeDraft);
+  const hasAnyUnsavedDraft = Object.keys(draftsBySlideId).length > 0;
 
-  const currentTitle = isCurrentDraft ? draft.title : (activeSlide?.title ?? '');
+  const currentTitle = isCurrentDraft ? activeDraft.title : (activeSlide?.title ?? '');
   const currentBullets = useMemo(() => {
-    if (isCurrentDraft) return draft.bullets;
+    if (isCurrentDraft) return activeDraft.bullets;
     return activeSlide?.content?.length ? activeSlide.content : [''];
-  }, [isCurrentDraft, draft, activeSlide]);
-  const currentLayout = isCurrentDraft ? draft.layout : (activeSlide?.layout || 'content');
-  const currentNotes = isCurrentDraft ? draft.speakerNotes : (activeSlide?.speakerNotes ?? '');
+  }, [isCurrentDraft, activeDraft, activeSlide]);
+  const currentLayout = isCurrentDraft ? activeDraft.layout : (activeSlide?.layout || 'content');
+  const currentNotes = isCurrentDraft
+    ? activeDraft.speakerNotes
+    : (activeSlide?.speakerNotes ?? '');
 
   const previewSlide = useMemo(() => {
     if (!activeSlide) return null;
@@ -137,20 +148,31 @@ export default function EditorPage() {
     };
   }, [activeSlide, activeIndex, currentTitle, currentBullets, currentLayout, currentNotes]);
 
+  const clearSlideDraft = (slideId) => {
+    if (!slideId) return;
+    setDraftsBySlideId((prev) => {
+      if (!prev[slideId]) return prev;
+      const next = { ...prev };
+      delete next[slideId];
+      return next;
+    });
+  };
+
   const updateDraft = (patch) => {
     if (!activeSlide) return;
-    setDraft((prev) => {
-      const base =
-        prev && prev.slideId === activeSlide._id
-          ? prev
-          : {
-              slideId: activeSlide._id,
-              title: activeSlide.title ?? '',
-              bullets: activeSlide.content?.length ? [...activeSlide.content] : [''],
-              layout: activeSlide.layout || 'content',
-              speakerNotes: activeSlide.speakerNotes ?? '',
-            };
-      return { ...base, ...patch };
+    const slideId = activeSlide._id;
+    setDraftsBySlideId((prev) => {
+      const base = prev[slideId] || {
+        slideId,
+        title: activeSlide.title ?? '',
+        bullets: activeSlide.content?.length ? [...activeSlide.content] : [''],
+        layout: activeSlide.layout || 'content',
+        speakerNotes: activeSlide.speakerNotes ?? '',
+      };
+      return {
+        ...prev,
+        [slideId]: { ...base, ...patch },
+      };
     });
   };
 
@@ -160,7 +182,6 @@ export default function EditorPage() {
       setSlideDir(nextIdx > activeIndex ? 1 : -1);
     }
     setActiveSlideId(slideId);
-    setDraft(null);
     setErrorMessage('');
   };
 
@@ -186,6 +207,7 @@ export default function EditorPage() {
 
   const handleSaveSlide = async () => {
     if (!activeSlide || saving) return;
+    const targetSlideId = activeSlide._id;
     setSaving(true);
     setErrorMessage('');
     setToast('');
@@ -196,17 +218,113 @@ export default function EditorPage() {
         layout: currentLayout,
         speakerNotes: currentNotes,
       };
-      const result = await api.updateSlide(activeSlide._id, payload);
+      const result = await api.updateSlide(targetSlideId, payload);
       setSlides((prev) =>
         prev.map((slide) => (slide._id === result.slide._id ? result.slide : slide))
       );
-      setDraft(null);
+      clearSlideDraft(targetSlideId);
       setToast('Slide changes saved.');
     } catch (error) {
       setErrorMessage(error.message || 'Failed to save slide changes.');
     } finally {
       setSaving(false);
     }
+  };
+
+  const saveHandlerRef = useRef(handleSaveSlide);
+  saveHandlerRef.current = handleSaveSlide;
+
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+        if (modalOpen || versionModalOpen) return;
+        event.preventDefault();
+        saveHandlerRef.current?.();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [modalOpen, versionModalOpen]);
+
+  const startRenameDeck = () => {
+    if (!deck || renamingDeck) return;
+    setDeckTitleInput(deck.title || deck.topic || '');
+    setIsRenamingDeck(true);
+  };
+
+  const cancelRenameDeck = () => {
+    if (renamingDeck) return;
+    setIsRenamingDeck(false);
+    setDeckTitleInput('');
+  };
+
+  const commitRenameDeck = async () => {
+    if (!deckId || !deck || renamingDeck) return;
+    const nextTitle = deckTitleInput.trim();
+    const existingTitle = String(deck.title || deck.topic || '').trim();
+    if (!nextTitle || nextTitle === existingTitle) {
+      setIsRenamingDeck(false);
+      return;
+    }
+    setRenamingDeck(true);
+    setErrorMessage('');
+    try {
+      const result = await api.updateDeck(deckId, { title: nextTitle.slice(0, 200) });
+      setDeck(result.deck);
+      setIsRenamingDeck(false);
+      setToast('Presentation title updated.');
+    } catch (error) {
+      setErrorMessage(error.message || 'Failed to rename presentation.');
+    } finally {
+      setRenamingDeck(false);
+    }
+  };
+
+  const handleDeckTitleKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      commitRenameDeck();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      cancelRenameDeck();
+    }
+  };
+
+  const handleSelectDeckTheme = async (nextThemeValue) => {
+    if (!deckId || !deck) return;
+    const normalized = normalizeDeckTheme(nextThemeValue);
+    if (normalized === deckTheme) return;
+
+    const previousTheme = deck.theme;
+    setDeck((prev) => (prev ? { ...prev, theme: normalized } : prev));
+    setErrorMessage('');
+    try {
+      const result = await api.updateDeck(deckId, { theme: normalized });
+      setDeck(result.deck);
+      setToast(`Applied ${DECK_THEME_OPTIONS.find((item) => item.value === normalized)?.label || normalized} theme.`);
+    } catch (error) {
+      setDeck((prev) => (prev ? { ...prev, theme: previousTheme } : prev));
+      setErrorMessage(error.message || 'Failed to update deck theme.');
+    }
+  };
+
+  const handleThemeRadioKeyDown = (event, index) => {
+    let nextIndex = null;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      nextIndex = (index + 1) % DECK_THEME_OPTIONS.length;
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      nextIndex = (index - 1 + DECK_THEME_OPTIONS.length) % DECK_THEME_OPTIONS.length;
+    } else if (event.key === 'Home') {
+      nextIndex = 0;
+    } else if (event.key === 'End') {
+      nextIndex = DECK_THEME_OPTIONS.length - 1;
+    }
+    if (nextIndex === null) return;
+    event.preventDefault();
+    const targetOption = DECK_THEME_OPTIONS[nextIndex];
+    handleSelectDeckTheme(targetOption.value);
+    const radios = event.currentTarget.parentElement?.querySelectorAll('[role="radio"]');
+    radios?.[nextIndex]?.focus();
   };
 
   const handleAddSlide = async () => {
@@ -224,10 +342,33 @@ export default function EditorPage() {
       setSlides((prev) => [...prev, result.slide]);
       setSlideDir(1);
       setActiveSlideId(result.slide._id);
-      setDraft(null);
       setToast('Added a new slide.');
     } catch (error) {
       setErrorMessage(error.message || 'Failed to add slide.');
+    } finally {
+      setMutating(false);
+    }
+  };
+
+  const handleDuplicateSlide = async () => {
+    if (!activeSlide || slides.length >= 10 || mutating) return;
+    setMutating(true);
+    setErrorMessage('');
+    setToast('');
+    try {
+      const result = await api.duplicateSlide(activeSlide._id);
+      if (Array.isArray(result.slides)) {
+        setSlides(result.slides);
+      } else if (result.slide) {
+        setSlides((prev) => [...prev, result.slide]);
+      }
+      if (result.slide?._id) {
+        setSlideDir(1);
+        setActiveSlideId(result.slide._id);
+      }
+      setToast('Slide duplicated.');
+    } catch (error) {
+      setErrorMessage(error.message || 'Failed to duplicate slide.');
     } finally {
       setMutating(false);
     }
@@ -283,7 +424,7 @@ export default function EditorPage() {
       const nextSelected = remaining[Math.min(removedIndex, remaining.length - 1)] || null;
       setSlides(remaining);
       setActiveSlideId(nextSelected?._id || null);
-      setDraft(null);
+      clearSlideDraft(removedId);
       setToast('Slide removed.');
     } catch (error) {
       setErrorMessage(error.message || 'Failed to delete slide.');
@@ -294,12 +435,13 @@ export default function EditorPage() {
 
   const handleRegenerate = async (instruction) => {
     if (!activeSlide) return;
+    const targetSlideId = activeSlide._id;
     setErrorMessage('');
-    const result = await api.regenerateSlide(activeSlide._id, instruction);
+    const result = await api.regenerateSlide(targetSlideId, instruction);
     setSlides((prev) =>
       prev.map((slide) => (slide._id === result.slide._id ? result.slide : slide))
     );
-    setDraft(null);
+    clearSlideDraft(targetSlideId);
     setToast('Slide regenerated with AI. Previous snapshot saved to Version history.');
   };
 
@@ -328,14 +470,15 @@ export default function EditorPage() {
 
   const handleRestoreVersion = async (versionId) => {
     if (!activeSlide || restoringVersionId) return;
+    const targetSlideId = activeSlide._id;
     setRestoringVersionId(versionId);
     setVersionError('');
     try {
-      const result = await api.restoreSlideVersion(activeSlide._id, versionId);
+      const result = await api.restoreSlideVersion(targetSlideId, versionId);
       setSlides((prev) =>
         prev.map((slide) => (slide._id === result.slide._id ? result.slide : slide))
       );
-      setDraft(null);
+      clearSlideDraft(targetSlideId);
       setVersionModalOpen(false);
       setVersionError('');
       setToast('Restored slide snapshot from version history.');
@@ -382,7 +525,54 @@ export default function EditorPage() {
               <Icon name="arrowLeft" size={18} />
             </Link>
             <div className="editor-topbar__titles">
-              <strong>{deckTitle}</strong>
+              {isRenamingDeck ? (
+                <div className="editor-topbar__rename-row">
+                  <input
+                    type="text"
+                    className="editor-topbar__rename-input"
+                    aria-label="Deck title"
+                    value={deckTitleInput}
+                    maxLength={200}
+                    autoFocus
+                    onChange={(event) => setDeckTitleInput(event.target.value)}
+                    onKeyDown={handleDeckTitleKeyDown}
+                  />
+                  <button
+                    type="button"
+                    className="editor-topbar__rename-action"
+                    onClick={commitRenameDeck}
+                    disabled={renamingDeck}
+                    aria-label="Confirm rename"
+                  >
+                    <Icon name="check" size={15} />
+                  </button>
+                  <button
+                    type="button"
+                    className="editor-topbar__rename-action"
+                    onClick={cancelRenameDeck}
+                    disabled={renamingDeck}
+                    aria-label="Cancel rename"
+                  >
+                    <Icon name="close" size={15} />
+                  </button>
+                </div>
+              ) : (
+                <div className="editor-topbar__title-row">
+                  <strong>{deckTitle}</strong>
+                  {!loading && deck && (
+                    <button
+                      type="button"
+                      className="editor-topbar__rename-btn"
+                      onClick={startRenameDeck}
+                      aria-label="Rename deck title"
+                      title="Rename presentation"
+                    >
+                      <Icon name="edit" size={14} />
+                    </button>
+                  )}
+                </div>
+              )}
+
               <small className="editor-topbar__meta">
                 {loading ? (
                   'Loading slides...'
@@ -397,10 +587,10 @@ export default function EditorPage() {
                       •
                     </span>
                     <span
-                      className={`editor-status ${isCurrentDraft ? 'editor-status--unsaved' : 'editor-status--saved'}`}
+                      className={`editor-status ${hasAnyUnsavedDraft ? 'editor-status--unsaved' : 'editor-status--saved'}`}
                     >
                       <span className="editor-status__dot" aria-hidden="true" />
-                      {isCurrentDraft ? 'Unsaved edits' : 'All changes saved'}
+                      {hasAnyUnsavedDraft ? 'Unsaved edits' : 'All changes saved'}
                     </span>
                   </>
                 )}
@@ -490,21 +680,31 @@ export default function EditorPage() {
         {!loading && slides.length > 0 && activeSlide && (
           <section className="editor-grid">
             <aside className="editor-thumbs" aria-label="Slide thumbnails">
-              {slides.map((slide, index) => (
-                <button
-                  type="button"
-                  key={slide._id}
-                  className={slide._id === activeSlide._id ? 'is-active' : ''}
-                  onClick={() => selectSlide(slide._id)}
-                >
-                  <span>{slide.slideNumber || index + 1}</span>
-                  <div className={`thumb thumb--${slide.layout || 'content'}`} aria-hidden="true">
-                    <Icon name={layoutIcon(slide.layout)} size={24} />
-                    <em>{(slide.layout || 'content').replace('_', ' ')}</em>
-                  </div>
-                  <small>{slide.title || 'Untitled slide'}</small>
-                </button>
-              ))}
+              {slides.map((slide, index) => {
+                const slideDraft = draftsBySlideId[slide._id];
+                const thumbLayout = slideDraft ? slideDraft.layout : slide.layout || 'content';
+                const thumbTitle =
+                  (slideDraft ? slideDraft.title : slide.title)?.trim() || 'Untitled slide';
+
+                return (
+                  <button
+                    type="button"
+                    key={slide._id}
+                    className={slide._id === activeSlide._id ? 'is-active' : ''}
+                    onClick={() => selectSlide(slide._id)}
+                  >
+                    <span>
+                      {slide.slideNumber || index + 1}
+                      {slideDraft && <i className="editor-thumb__unsaved" aria-hidden="true" />}
+                    </span>
+                    <div className={`thumb thumb--${thumbLayout}`} aria-hidden="true">
+                      <Icon name={layoutIcon(thumbLayout)} size={24} />
+                      <em>{thumbLayout.replace('_', ' ')}</em>
+                    </div>
+                    <small>{thumbTitle}</small>
+                  </button>
+                );
+              })}
               <button
                 type="button"
                 className="editor-add"
@@ -558,6 +758,7 @@ export default function EditorPage() {
                   key={`${activeSlide._id}:${currentLayout}`}
                   slide={previewSlide}
                   direction={slideDir}
+                  theme={deckTheme}
                 />
 
                 <div className="editor-inline-card">
@@ -616,6 +817,35 @@ export default function EditorPage() {
             </section>
 
             <aside className="editor-properties" aria-label="Slide properties">
+              <h2>Deck theme</h2>
+              <div
+                className="editor-theme-grid"
+                role="radiogroup"
+                aria-label="Deck color theme"
+              >
+                {DECK_THEME_OPTIONS.map((option, index) => {
+                  const selected = deckTheme === option.value;
+                  return (
+                    <button
+                      type="button"
+                      key={option.value}
+                      role="radio"
+                      aria-checked={selected}
+                      tabIndex={selected ? 0 : -1}
+                      className={`editor-theme-chip ${selected ? 'is-active' : ''}`}
+                      onClick={() => handleSelectDeckTheme(option.value)}
+                      onKeyDown={(event) => handleThemeRadioKeyDown(event, index)}
+                    >
+                      <span
+                        className={`editor-theme-swatch editor-theme-swatch--${option.value}`}
+                        aria-hidden="true"
+                      />
+                      <span>{option.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
               <h2>Slide layout</h2>
               <div className="layout-grid">
                 {LAYOUT_OPTIONS.map((option) => (
@@ -698,6 +928,15 @@ export default function EditorPage() {
                   <Icon name="download" size={16} /> Move down
                 </button>
               </div>
+
+              <button
+                type="button"
+                className="editor-duplicate"
+                onClick={handleDuplicateSlide}
+                disabled={slides.length >= 10 || busy}
+              >
+                <Icon name="copy" size={16} /> Duplicate slide
+              </button>
 
               <button
                 type="button"

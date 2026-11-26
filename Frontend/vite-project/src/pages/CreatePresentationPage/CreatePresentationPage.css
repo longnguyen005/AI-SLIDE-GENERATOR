@@ -270,6 +270,93 @@
   line-height: 1.4;
 }
 
+/* ─── Deck Color Theme Cards ─────────────────────────────────────────────── */
+.theme-palette-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.theme-palette-card {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  gap: 11px;
+  padding: 11px 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-panel);
+  color: var(--fg);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--motion-fast) var(--ease-out),
+    background var(--motion-fast) var(--ease-out),
+    box-shadow var(--motion-fast) var(--ease-out),
+    transform var(--motion-press) var(--ease-out);
+}
+
+.theme-palette-card:active {
+  transform: scale(0.985);
+}
+
+.theme-palette-card:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-elevated);
+}
+
+.theme-palette-card:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.theme-palette-card--selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 1px var(--accent-border);
+}
+
+.theme-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--surface);
+  box-shadow: var(--elev-ring);
+}
+
+.theme-swatch--indigo {
+  background: var(--swatch-indigo);
+}
+
+.theme-swatch--emerald {
+  background: var(--swatch-emerald);
+}
+
+.theme-swatch--amber {
+  background: var(--swatch-amber);
+}
+
+.theme-swatch--coral {
+  background: var(--swatch-coral);
+}
+
+.theme-palette-card__body {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.theme-palette-card__body strong {
+  color: var(--fg);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.theme-palette-card__body small {
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+
 /* ─── Slide Stepper & Language ───────────────────────────────────────────── */
 .create-options {
   display: grid;
@@ -411,6 +498,7 @@
 
 @media (max-width: 720px) {
   .tone-grid,
+  .theme-palette-grid,
   .create-options {
     grid-template-columns: 1fr;
   }

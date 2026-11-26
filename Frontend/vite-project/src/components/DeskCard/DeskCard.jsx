@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Icon from '../Icon/Icon';
+import { normalizeDeckTheme } from '../../constants/deckThemes';
 import './DeskCard.css';
 
 const TONE_COVERS = {
@@ -33,6 +34,8 @@ export default function DeckCard({
   deck,
   selected = false,
   staggerIndex = 0,
+  onDuplicate,
+  duplicating = false,
   onDelete,
   deleting = false,
 }) {
@@ -47,6 +50,7 @@ export default function DeckCard({
 
   const normalizedTone = String(deck?.tone || 'professional').trim().toLowerCase();
   const coverVariant = TONE_COVERS[normalizedTone] || TONE_COVERS.professional;
+  const resolvedTheme = normalizeDeckTheme(deck?.theme);
 
   const firstSectionTitle =
     typeof deck?.outline?.sections?.[0]?.title === 'string'
@@ -72,6 +76,7 @@ export default function DeckCard({
       <Link to={deckHref(deckId, deck?.status)} className="deck-card__main">
         <div
           className={`deck-card__cover deck-card__cover--${coverVariant.key}`}
+          data-deck-theme={resolvedTheme}
           aria-hidden="true"
         >
           <div className="deck-card__cover-frame">
@@ -127,6 +132,18 @@ export default function DeckCard({
             >
               <Icon name="list" size={14} /> Outline
             </Link>
+          )}
+
+          {onDuplicate && (
+            <button
+              type="button"
+              className="deck-card__action"
+              onClick={() => onDuplicate(deck)}
+              disabled={duplicating || deleting}
+              aria-label={`Duplicate ${title}`}
+            >
+              <Icon name="copy" size={14} /> {duplicating ? 'Copying...' : 'Duplicate'}
+            </button>
           )}
 
           {onDelete && (

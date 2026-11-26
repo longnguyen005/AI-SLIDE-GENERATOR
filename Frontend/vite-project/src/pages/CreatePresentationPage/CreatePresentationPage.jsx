@@ -4,6 +4,7 @@ import Sidebar from '../../components/SideBar/SideBar';
 import Icon from '../../components/Icon/Icon';
 import Button from '../../components/Button/Button';
 import Topbar from '../../components/Topbar/Topbar';
+import { DECK_THEME_OPTIONS, normalizeDeckTheme } from '../../constants/deckThemes';
 import { api } from '../../service/apiClient';
 import './CreatePresentationPage.css';
 
@@ -55,6 +56,7 @@ export default function CreatePresentationPage() {
   const [topic, setTopic] = useState('');
   const [description, setDescription] = useState('');
   const [tone, setTone] = useState('professional');
+  const [theme, setTheme] = useState('indigo');
   const [slideCount, setSlideCount] = useState(6);
   const [stepDir, setStepDir] = useState('up');
   const [notice, setNotice] = useState('');
@@ -74,6 +76,7 @@ export default function CreatePresentationPage() {
         setTopic(deck.topic || '');
         setDescription(deck.description || '');
         setTone(normalizeTone(deck.tone));
+        setTheme(normalizeDeckTheme(deck.theme));
         setSlideCount(Number(deck.slideCount) || 6);
       } catch (error) {
         if (active) setNotice(error.message);
@@ -111,6 +114,29 @@ export default function CreatePresentationPage() {
     radios?.[nextIndex]?.focus();
   };
 
+  const handleThemeKeyDown = (event, index) => {
+    let nextIndex = null;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      nextIndex = (index + 1) % DECK_THEME_OPTIONS.length;
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      nextIndex = (index - 1 + DECK_THEME_OPTIONS.length) % DECK_THEME_OPTIONS.length;
+    } else if (event.key === 'Home') {
+      nextIndex = 0;
+    } else if (event.key === 'End') {
+      nextIndex = DECK_THEME_OPTIONS.length - 1;
+    } else if (event.key === ' ') {
+      event.preventDefault();
+      setTheme(DECK_THEME_OPTIONS[index].value);
+      return;
+    }
+
+    if (nextIndex === null) return;
+    event.preventDefault();
+    setTheme(DECK_THEME_OPTIONS[nextIndex].value);
+    const radios = event.currentTarget.parentElement?.querySelectorAll('[role="radio"]');
+    radios?.[nextIndex]?.focus();
+  };
+
   const submit = async (event) => {
     event.preventDefault();
     setNotice('');
@@ -121,6 +147,7 @@ export default function CreatePresentationPage() {
         description,
         language: 'English',
         tone: normalizeTone(tone).toLowerCase(),
+        theme: normalizeDeckTheme(theme),
         slideCount,
       };
       const result = deckId ? await api.updateDeck(deckId, payload) : await api.createDeck(payload);
@@ -235,6 +262,36 @@ export default function CreatePresentationPage() {
                     <span className="tone-card__body">
                       <strong>{option.label}</strong>
                       <small>{option.subtitle}</small>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="form-group">
+            <span className="form-group__label">Deck Color Theme</span>
+            <div className="theme-palette-grid" role="radiogroup" aria-label="Deck color theme">
+              {DECK_THEME_OPTIONS.map((option, index) => {
+                const isSelected = normalizeDeckTheme(theme) === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={isSelected}
+                    tabIndex={isSelected ? 0 : -1}
+                    className={`theme-palette-card ${isSelected ? 'theme-palette-card--selected' : ''}`}
+                    onClick={() => setTheme(option.value)}
+                    onKeyDown={(event) => handleThemeKeyDown(event, index)}
+                  >
+                    <span
+                      className={`theme-swatch theme-swatch--${option.value}`}
+                      aria-hidden="true"
+                    />
+                    <span className="theme-palette-card__body">
+                      <strong>{option.label}</strong>
+                      <small>{option.hint}</small>
                     </span>
                   </button>
                 );

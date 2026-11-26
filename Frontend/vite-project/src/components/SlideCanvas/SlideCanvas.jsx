@@ -1,5 +1,6 @@
 import React from 'react';
 import Icon from '../Icon/Icon';
+import { normalizeDeckTheme } from '../../constants/deckThemes';
 import './SlideCanvas.css';
 
 const VALID_LAYOUTS = new Set(['title', 'section', 'content', 'two_column', 'summary']);
@@ -21,11 +22,12 @@ function visualIcon(title = '') {
   return 'sparkles';
 }
 
-export default function SlideCanvas({ slide, direction = 0 }) {
+export default function SlideCanvas({ slide, direction = 0, theme }) {
   const rawPoints = slide?.content || slide?.points || [];
   const points = Array.isArray(rawPoints) ? rawPoints.filter((point) => String(point).trim().length > 0) : [];
   const rawLayout = slide?.layout || 'content';
   const layout = VALID_LAYOUTS.has(rawLayout) ? rawLayout : 'content';
+  const resolvedTheme = normalizeDeckTheme(theme || slide?.theme);
   const slideNum = String(slide?.slideNumber || 1).padStart(2, '0');
   const title = slide?.title || 'Untitled slide';
   const icon = visualIcon(title);
@@ -39,6 +41,7 @@ export default function SlideCanvas({ slide, direction = 0 }) {
     <section
       className={`slide-canvas slide-canvas--${layout}`}
       data-layout={layout}
+      data-deck-theme={resolvedTheme}
       data-direction={directionAttr}
       aria-label={`Slide ${slideNum}: ${title}`}
     >
