@@ -98,9 +98,15 @@
     0 4px 12px rgba(0, 0, 0, 0.08);
 
   /* ─── Motion & Layout ────────────────────────────────────────────────── */
-  --motion-fast:    150ms;
-  --motion-base:    200ms;
+  --motion-press:   120ms;
+  --motion-fast:    160ms;
+  --motion-base:    220ms;
+  --motion-enter:   380ms;
+  --motion-stage:   480ms;
   --ease-standard:  cubic-bezier(0.2, 0, 0, 1);
+  --ease-out:       cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out:    cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer:    cubic-bezier(0.32, 0.72, 0, 1);
   --sidebar-width:  252px;
   --container-max:  1200px;
 

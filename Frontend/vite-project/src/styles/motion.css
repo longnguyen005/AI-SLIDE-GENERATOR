@@ -1,0 +1,233 @@
+/* ─────────────────────────────────────────────────────────────────────────
+ * src/styles/motion.css
+ *
+ * Open Design `emil-design-eng` & `animation-discipline` motion layer.
+ * GPU-only transforms/opacity, zero raw hex literals, explicit property lists,
+ * and `prefers-reduced-motion` vestibular fallbacks.
+ * ───────────────────────────────────────────────────────────────────────── */
+
+@keyframes deckai-rise-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes deckai-scale-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes deckai-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes deckai-slide-forward {
+  from {
+    opacity: 0;
+    transform: translate3d(22px, 0, 0) scale(0.986);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes deckai-slide-backward {
+  from {
+    opacity: 0;
+    transform: translate3d(-22px, 0, 0) scale(0.986);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes deckai-item-cascade {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes deckai-shake {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  25% {
+    transform: translate3d(-5px, 0, 0);
+  }
+  60% {
+    transform: translate3d(4px, 0, 0);
+  }
+  82% {
+    transform: translate3d(-2px, 0, 0);
+  }
+}
+
+@keyframes deckai-highlight-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent), transparent 45%);
+  }
+  60% {
+    box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent), transparent 76%);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent), transparent 100%);
+  }
+}
+
+@keyframes deckai-slot-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 7px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes deckai-slot-down {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -7px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes deckai-tour-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes deckai-glow-breath {
+  0%,
+  100% {
+    opacity: 0.82;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate3d(0, 8px, 0) scale(1.04);
+  }
+}
+
+/* ─── Workspace Surface Entrances & Modals ───────────────────────────────── */
+.page-content,
+.create-main,
+.outline-main,
+.editor-workspace {
+  animation: deckai-rise-in var(--motion-base) var(--ease-out) both;
+}
+
+.sidebar-popup-backdrop,
+.modal-backdrop {
+  animation: deckai-fade-in var(--motion-fast) var(--ease-out) both;
+}
+
+.sidebar-popup,
+.regenerate-modal {
+  transform-origin: center;
+  animation: deckai-scale-in var(--motion-base) var(--ease-out) both;
+}
+
+/* ─── Scroll-Triggered Reveal Choreography ───────────────────────────────── */
+[data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+  transition:
+    opacity var(--motion-stage) var(--ease-out),
+    transform var(--motion-stage) var(--ease-out);
+  transition-delay: calc(var(--stagger-index, 0) * 55ms);
+  will-change: opacity, transform;
+}
+
+[data-reveal][data-visible="true"] {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+/* ─── Shared Sliding Pill Indicator ──────────────────────────────────────── */
+.sliding-pill-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent-border);
+  background: var(--accent-soft);
+  transition:
+    transform var(--motion-base) var(--ease-out),
+    opacity var(--motion-fast) var(--ease-out);
+  will-change: transform;
+}
+
+/* ─── Vestibular & Reduced-Motion Fallbacks ──────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-press: 0ms;
+    --motion-fast: 1ms;
+    --motion-base: 1ms;
+    --motion-enter: 1ms;
+    --motion-stage: 1ms;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+
+  .page-content,
+  .create-main,
+  .outline-main,
+  .editor-workspace,
+  .sidebar-popup,
+  .regenerate-modal {
+    animation: deckai-fade-in 120ms linear both !important;
+  }
+
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .sliding-pill-indicator {
+    transition: none !important;
+  }
+}
