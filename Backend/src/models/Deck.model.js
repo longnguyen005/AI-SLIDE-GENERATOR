@@ -12,6 +12,7 @@ const deckSchema = new Schema({
     description: { type: String, default: '' },
     language: { type: String, enum: ['English', 'en'], default: 'English' },
     tone: { type: String, enum: ['professional', 'academic', 'simple', 'persuasive'], required: true },
+    theme: { type: String, enum: ['indigo', 'emerald', 'amber', 'coral'], default: 'indigo' },
     slideCount: { type: Number, min: 1, max: 10, required: true },
     status: {
         type: String,

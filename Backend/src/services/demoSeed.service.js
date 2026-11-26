@@ -178,6 +178,7 @@ export async function ensureDemoUserAndDecks() {
                 'Executive rollout plan covering workflow selection, security guardrails, ROI metrics, and phased deployment.',
             language: 'English',
             tone: 'professional',
+            theme: 'indigo',
             slideCount: 5,
             status: 'ready',
             outline: { sections: READY_DECK_OUTLINE }
@@ -223,6 +224,7 @@ export async function ensureDemoUserAndDecks() {
                 'Investor narrative framing grid reliability pain points, unit economics, commercial traction, and capital allocation.',
             language: 'English',
             tone: 'persuasive',
+            theme: 'emerald',
             slideCount: 5,
             status: 'outline_ready',
             outline: { sections: OUTLINE_READY_SECTIONS }

@@ -12,12 +12,15 @@ export async function exportPptx(req, res) {
     const slides = await Slide.find({ deckId: deck._id }).sort({ slideNumber: 1 });
     if (!slides.length)
         throw new ApiError(400, 'Deck has no slides to export');
-    const buffer = await buildPptx({ title: deck.title, topic: deck.topic }, slides.map((slide) => ({
-        title: slide.title,
-        content: slide.content,
-        speakerNotes: slide.speakerNotes,
-        layout: slide.layout
-    })));
+    const buffer = await buildPptx(
+        { title: deck.title, topic: deck.topic, theme: deck.theme || 'indigo' },
+        slides.map((slide) => ({
+            title: slide.title,
+            content: slide.content,
+            speakerNotes: slide.speakerNotes,
+            layout: slide.layout
+        }))
+    );
     const fileName = `${fileSafe(deck.title)}-${Date.now()}.pptx`;
     await ExportHistory.create({
         deckId: deck._id,

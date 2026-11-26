@@ -226,6 +226,13 @@ export const api = {
           body: JSON.stringify(data),
         }),
 
+  duplicateDeck: (deckId) =>
+    isBrowserDemoActive()
+      ? demoStore.duplicateDeck(deckId)
+      : request(`/decks/${deckId}/duplicate`, {
+          method: 'POST',
+        }),
+
   deleteDeck: (deckId) =>
     isBrowserDemoActive()
       ? demoStore.deleteDeck(deckId)
@@ -275,6 +282,13 @@ export const api = {
       : request(`/decks/${deckId}/slides`, {
           method: 'POST',
           body: JSON.stringify(data),
+        }),
+
+  duplicateSlide: (slideId) =>
+    isBrowserDemoActive()
+      ? demoStore.duplicateSlide(slideId)
+      : request(`/slides/${slideId}/duplicate`, {
+          method: 'POST',
         }),
 
   deleteSlide: (slideId) =>

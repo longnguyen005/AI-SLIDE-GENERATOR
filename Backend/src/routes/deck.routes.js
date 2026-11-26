@@ -1,6 +1,14 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import { createDeck, deleteDeck, getDeck, listDecks, summary, updateDeck } from '../controllers/deck.controller.js';
+import {
+    createDeck,
+    deleteDeck,
+    duplicateDeck,
+    getDeck,
+    listDecks,
+    summary,
+    updateDeck
+} from '../controllers/deck.controller.js';
 import { exportPptx, listExports } from '../controllers/export.controller.js';
 import { generateDeckOutline, generateDeckSlides, getOutline, updateOutline } from '../controllers/outline.controller.js';
 import { createSlide, listSlides, reorderSlides } from '../controllers/slide.controller.js';
@@ -31,6 +39,7 @@ router.get('/', asyncHandler(listDecks));
 router.get('/stats/summary', asyncHandler(summary));
 router.post('/', validateBody(createDeckSchema), asyncHandler(createDeck));
 router.get('/:deckId', asyncHandler(getDeck));
+router.post('/:deckId/duplicate', asyncHandler(duplicateDeck));
 router.patch('/:deckId', validateBody(updateDeckSchema), asyncHandler(updateDeck));
 router.delete('/:deckId', asyncHandler(deleteDeck));
 

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
     deleteSlide,
+    duplicateSlide,
     regenerateSlide,
     restoreSlideVersion,
     updateSlide,
@@ -16,6 +17,7 @@ const router = Router();
 router.use(authMiddleware);
 
 router.patch('/:slideId', validateBody(slideUpdateSchema), asyncHandler(updateSlide));
+router.post('/:slideId/duplicate', asyncHandler(duplicateSlide));
 router.delete('/:slideId', asyncHandler(deleteSlide));
 router.post('/:slideId/regenerate', validateBody(regenerateSchema), asyncHandler(regenerateSlide));
 router.get('/:slideId/versions', asyncHandler(versions));

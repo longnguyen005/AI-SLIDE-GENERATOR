@@ -27,6 +27,15 @@ export async function getDeck(req, res) {
     const deck = await getOwnedDeck(routeParam(req.params.deckId, 'deckId'), req.user.id);
     res.json({ deck });
 }
+function buildCopyTitle(rawTitle = '', fallback = 'Untitled Presentation', maxLen = 200) {
+    const base = String(rawTitle || '').trim() || fallback;
+    const suffix = ' (Copy)';
+    if (base.length + suffix.length <= maxLen) {
+        return `${base}${suffix}`;
+    }
+    return `${base.slice(0, maxLen - suffix.length).trimEnd()}${suffix}`;
+}
+
 export async function createDeck(req, res) {
     const deck = await Deck.create({
         userId: req.user?.id,
@@ -35,6 +44,7 @@ export async function createDeck(req, res) {
         description: req.body.description || '',
         language: req.body.language || 'English',
         tone: req.body.tone,
+        theme: req.body.theme || 'indigo',
         slideCount: Number(req.body.slideCount),
         status: 'draft'
     });
@@ -42,16 +52,64 @@ export async function createDeck(req, res) {
 }
 export async function updateDeck(req, res) {
     const deck = await getOwnedDeck(routeParam(req.params.deckId, 'deckId'), req.user.id);
-    const allowed = ['title', 'topic', 'description', 'language', 'tone'];
+    const allowed = ['title', 'topic', 'description', 'language', 'tone', 'theme'];
     allowed.forEach((key) => {
         if (req.body[key] !== undefined)
             deck.set(key, req.body[key]);
     });
     if (req.body.slideCount !== undefined)
         deck.slideCount = Number(req.body.slideCount);
-    deck.status = 'draft';
+    const briefFields = ['topic', 'description', 'language', 'tone', 'slideCount'];
+    if (briefFields.some((key) => req.body[key] !== undefined)) {
+        deck.status = 'draft';
+    }
     await deck.save();
     res.json({ deck });
+}
+export async function duplicateDeck(req, res) {
+    const source = await getOwnedDeck(routeParam(req.params.deckId, 'deckId'), req.user.id);
+    const sourceSlides = await Slide.find({ deckId: source._id }).sort({ slideNumber: 1 });
+    const clonedSections = Array.isArray(source.outline?.sections)
+        ? source.outline.sections.map((section, idx) => ({
+            id: `${section.id || 'sec'}-copy-${idx + 1}`,
+            title: section.title,
+            summary: section.summary || '',
+            order: section.order || idx + 1
+        }))
+        : [];
+
+    const clonedDeck = await Deck.create({
+        userId: req.user.id,
+        title: buildCopyTitle(source.title || source.topic, 'Untitled Presentation', 200),
+        topic: source.topic,
+        description: source.description || '',
+        language: source.language || 'English',
+        tone: source.tone,
+        theme: source.theme || 'indigo',
+        slideCount: sourceSlides.length > 0 ? sourceSlides.length : source.slideCount,
+        status: source.status,
+        outline: { sections: clonedSections }
+    });
+
+    try {
+        if (sourceSlides.length > 0) {
+            await Slide.insertMany(
+                sourceSlides.map((slide, index) => ({
+                    deckId: clonedDeck._id,
+                    slideNumber: index + 1,
+                    title: slide.title,
+                    content: Array.isArray(slide.content) ? [...slide.content] : [],
+                    speakerNotes: slide.speakerNotes || '',
+                    layout: slide.layout || 'content'
+                }))
+            );
+        }
+    } catch (error) {
+        await clonedDeck.deleteOne().catch(() => {});
+        throw error;
+    }
+
+    res.status(201).json({ deck: clonedDeck });
 }
 export async function deleteDeck(req, res) {
     const deck = await getOwnedDeck(routeParam(req.params.deckId, 'deckId'), req.user.id);

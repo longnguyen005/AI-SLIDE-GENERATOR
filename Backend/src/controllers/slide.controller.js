@@ -40,6 +40,15 @@ export async function listSlides(req, res) {
     res.json({ slides });
 }
 
+function buildCopySlideTitle(rawTitle = '', maxLen = 200) {
+    const base = String(rawTitle || '').trim() || 'Untitled slide';
+    const suffix = ' (Copy)';
+    if (base.length + suffix.length <= maxLen) {
+        return `${base}${suffix}`;
+    }
+    return `${base.slice(0, maxLen - suffix.length).trimEnd()}${suffix}`;
+}
+
 export async function createSlide(req, res) {
     const deck = await getOwnedDeck(routeParamObjectId(req.params.deckId, 'deckId'), req.user.id);
     const count = await Slide.countDocuments({ deckId: deck._id });
@@ -60,6 +69,36 @@ export async function createSlide(req, res) {
     await deck.save();
 
     res.status(201).json({ slide });
+}
+
+export async function duplicateSlide(req, res) {
+    const source = await getOwnedSlide(routeParamObjectId(req.params.slideId, 'slideId'), req.user.id);
+    const existingSlides = await Slide.find({ deckId: source.deckId }).sort({ slideNumber: 1, createdAt: 1 });
+    if (existingSlides.length >= 10) {
+        throw new ApiError(400, 'A deck can contain at most 10 slides');
+    }
+
+    const duplicated = await Slide.create({
+        deckId: source.deckId,
+        slideNumber: -(existingSlides.length + 100),
+        title: buildCopySlideTitle(source.title, 200),
+        content: Array.isArray(source.content) ? [...source.content] : [],
+        speakerNotes: source.speakerNotes || '',
+        layout: VALID_LAYOUTS.has(source.layout) ? source.layout : 'content'
+    });
+
+    const sourceIndex = existingSlides.findIndex((item) => item._id.equals(source._id));
+    const insertIndex = sourceIndex >= 0 ? sourceIndex + 1 : existingSlides.length;
+    const orderedIds = existingSlides.map((item) => item._id);
+    orderedIds.splice(insertIndex, 0, duplicated._id);
+
+    await assignSlideNumbers(orderedIds);
+    await Deck.findByIdAndUpdate(source.deckId, { slideCount: orderedIds.length });
+
+    const updatedSlides = await Slide.find({ deckId: source.deckId }).sort({ slideNumber: 1 });
+    const refreshedSlide = updatedSlides.find((item) => item._id.equals(duplicated._id)) || duplicated;
+
+    res.status(201).json({ slide: refreshedSlide, slides: updatedSlides });
 }
 
 export async function updateSlide(req, res) {

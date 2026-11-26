@@ -3,6 +3,110 @@ import pptxgen from 'pptxgenjs';
 const SLIDE_W = 13.333;
 const SLIDE_H = 7.5;
 
+const PPTX_PALETTES = {
+    indigo: {
+        canvasBg: 'FBFBFF',
+        canvasArc: 'ECEAFF',
+        primary: '4F46E5',
+        primaryDark: '4338CA',
+        primaryLight: 'A5B4FC',
+        primaryTint: 'EEF2FF',
+        primaryBadgeBg: 'EEECFF',
+        sectionBg: 'EEF2FF',
+        sectionBadgeBg: 'E0E7FF',
+        sectionTitle: '1E1B4B',
+        sectionCardBorder: 'C7D2FE',
+        titleBg: '0F172A',
+        titleArc: '4338CA',
+        titleBar: '6366F1',
+        titleEyebrow: 'A5B4FC',
+        titleNum: '818CF8',
+        secondary: '0D9488',
+        secondaryDark: '0F766E',
+        secondaryTint: 'F0FDFA',
+        secondaryBadgeBg: 'CCFBF1',
+        visualGlow1: '22D3EE',
+        visualGlow2: '14B8A6'
+    },
+    emerald: {
+        canvasBg: 'F8FEFC',
+        canvasArc: 'D1FAE5',
+        primary: '0D9488',
+        primaryDark: '0F766E',
+        primaryLight: '5EEAD4',
+        primaryTint: 'ECFDF5',
+        primaryBadgeBg: 'CCFBF1',
+        sectionBg: 'ECFDF5',
+        sectionBadgeBg: 'D1FAE5',
+        sectionTitle: '064E3B',
+        sectionCardBorder: '99F6E4',
+        titleBg: '062822',
+        titleArc: '0F766E',
+        titleBar: '10B981',
+        titleEyebrow: '6EE7B7',
+        titleNum: '34D399',
+        secondary: '0284C7',
+        secondaryDark: '0369A1',
+        secondaryTint: 'F0F9FF',
+        secondaryBadgeBg: 'E0F2FE',
+        visualGlow1: '10B981',
+        visualGlow2: '0EA5E9'
+    },
+    amber: {
+        canvasBg: 'FFFDF9',
+        canvasArc: 'FEF3C7',
+        primary: 'D97706',
+        primaryDark: 'B45309',
+        primaryLight: 'FCD34D',
+        primaryTint: 'FFFBEB',
+        primaryBadgeBg: 'FEF3C7',
+        sectionBg: 'FFFBEB',
+        sectionBadgeBg: 'FDE68A',
+        sectionTitle: '451A03',
+        sectionCardBorder: 'FCD34D',
+        titleBg: '1C1917',
+        titleArc: 'B45309',
+        titleBar: 'F59E0B',
+        titleEyebrow: 'FCD34D',
+        titleNum: 'FBBF24',
+        secondary: '0F766E',
+        secondaryDark: '115E59',
+        secondaryTint: 'F0FDFA',
+        secondaryBadgeBg: 'CCFBF1',
+        visualGlow1: 'F59E0B',
+        visualGlow2: 'EA580C'
+    },
+    coral: {
+        canvasBg: 'FFFBFB',
+        canvasArc: 'FFE4E6',
+        primary: 'E11D48',
+        primaryDark: 'BE123C',
+        primaryLight: 'FDA4AF',
+        primaryTint: 'FFF1F2',
+        primaryBadgeBg: 'FFE4E6',
+        sectionBg: 'FFF1F2',
+        sectionBadgeBg: 'FECDD3',
+        sectionTitle: '4C0519',
+        sectionCardBorder: 'FDA4AF',
+        titleBg: '181118',
+        titleArc: 'BE123C',
+        titleBar: 'F43F5E',
+        titleEyebrow: 'FDA4AF',
+        titleNum: 'FB7185',
+        secondary: '0F766E',
+        secondaryDark: '115E59',
+        secondaryTint: 'F0FDFA',
+        secondaryBadgeBg: 'CCFBF1',
+        visualGlow1: 'F43F5E',
+        visualGlow2: 'FB923C'
+    }
+};
+
+export function resolvePptxPalette(theme = 'indigo') {
+    const key = String(theme || 'indigo').trim().toLowerCase();
+    return PPTX_PALETTES[key] || PPTX_PALETTES.indigo;
+}
+
 function iconLabel(title = '') {
     const text = title.toLowerCase();
     if (text.includes('climate') || text.includes('emission') || text.includes('global')) {
@@ -20,16 +124,16 @@ function iconLabel(title = '') {
     return 'AI';
 }
 
-function addLightCanvas(pptx, slide) {
-    slide.background = { color: 'FBFBFF' };
+function addLightCanvas(pptx, slide, palette) {
+    slide.background = { color: palette.canvasBg };
 
     slide.addShape(pptx.ShapeType.rect, {
         x: 0,
         y: 0,
         w: SLIDE_W,
         h: SLIDE_H,
-        fill: { color: 'FBFBFF' },
-        line: { color: 'FBFBFF', transparency: 100 }
+        fill: { color: palette.canvasBg },
+        line: { color: palette.canvasBg, transparency: 100 }
     });
 
     slide.addShape(pptx.ShapeType.arc, {
@@ -38,8 +142,8 @@ function addLightCanvas(pptx, slide) {
         w: 1.88,
         h: 1.88,
         adjustPoint: 0.35,
-        fill: { color: 'ECEAFF', transparency: 10 },
-        line: { color: 'ECEAFF', transparency: 100 }
+        fill: { color: palette.canvasArc, transparency: 10 },
+        line: { color: palette.canvasArc, transparency: 100 }
     });
 
     slide.addShape(pptx.ShapeType.rect, {
@@ -47,8 +151,8 @@ function addLightCanvas(pptx, slide) {
         y: 0.38,
         w: 0.72,
         h: 0.04,
-        fill: { color: '4338CA' },
-        line: { color: '4338CA', transparency: 100 }
+        fill: { color: palette.primaryDark },
+        line: { color: palette.primaryDark, transparency: 100 }
     });
 
     slide.addShape(pptx.ShapeType.rect, {
@@ -56,8 +160,8 @@ function addLightCanvas(pptx, slide) {
         y: 0.38,
         w: 0.48,
         h: 0.04,
-        fill: { color: 'A5B4FC' },
-        line: { color: 'A5B4FC', transparency: 100 }
+        fill: { color: palette.primaryLight },
+        line: { color: palette.primaryLight, transparency: 100 }
     });
 }
 
@@ -88,7 +192,7 @@ function addFooter(slide, index, dark = false) {
     });
 }
 
-function addVisualPanel(pptx, slide, title) {
+function addVisualPanel(pptx, slide, title, palette) {
     const panel = { x: 10.15, y: 1.12, w: 2.66, h: 5.45 };
 
     slide.addShape(pptx.ShapeType.roundRect, {
@@ -105,8 +209,8 @@ function addVisualPanel(pptx, slide, title) {
         w: 1.32,
         h: 1.32,
         adjustPoint: 0.35,
-        fill: { color: '22D3EE', transparency: 58 },
-        line: { color: '22D3EE', transparency: 100 }
+        fill: { color: palette.visualGlow1, transparency: 58 },
+        line: { color: palette.visualGlow1, transparency: 100 }
     });
 
     slide.addShape(pptx.ShapeType.arc, {
@@ -115,8 +219,8 @@ function addVisualPanel(pptx, slide, title) {
         w: 1.35,
         h: 1.35,
         adjustPoint: 0.35,
-        fill: { color: '14B8A6', transparency: 52 },
-        line: { color: '14B8A6', transparency: 100 }
+        fill: { color: palette.visualGlow2, transparency: 52 },
+        line: { color: palette.visualGlow2, transparency: 100 }
     });
 
     slide.addShape(pptx.ShapeType.roundRect, {
@@ -142,16 +246,16 @@ function addVisualPanel(pptx, slide, title) {
     });
 }
 
-function renderTitleSlide(pptx, slide, deck, slideData, content, index) {
-    slide.background = { color: '0F172A' };
+function renderTitleSlide(pptx, slide, deck, slideData, content, index, palette) {
+    slide.background = { color: palette.titleBg };
 
     slide.addShape(pptx.ShapeType.rect, {
         x: 0,
         y: 0,
         w: SLIDE_W,
         h: SLIDE_H,
-        fill: { color: '0F172A' },
-        line: { color: '0F172A', transparency: 100 }
+        fill: { color: palette.titleBg },
+        line: { color: palette.titleBg, transparency: 100 }
     });
 
     slide.addShape(pptx.ShapeType.arc, {
@@ -160,8 +264,8 @@ function renderTitleSlide(pptx, slide, deck, slideData, content, index) {
         w: 4.1,
         h: 4.1,
         adjustPoint: 0.35,
-        fill: { color: '4338CA', transparency: 55 },
-        line: { color: '4338CA', transparency: 100 }
+        fill: { color: palette.titleArc, transparency: 55 },
+        line: { color: palette.titleArc, transparency: 100 }
     });
 
     slide.addShape(pptx.ShapeType.rect, {
@@ -169,8 +273,8 @@ function renderTitleSlide(pptx, slide, deck, slideData, content, index) {
         y: 0.82,
         w: 1.2,
         h: 0.06,
-        fill: { color: '6366F1' },
-        line: { color: '6366F1', transparency: 100 }
+        fill: { color: palette.titleBar },
+        line: { color: palette.titleBar, transparency: 100 }
     });
 
     slide.addText('EXECUTIVE PRESENTATION', {
@@ -181,7 +285,7 @@ function renderTitleSlide(pptx, slide, deck, slideData, content, index) {
         fontSize: 10,
         bold: true,
         charSpace: 1.8,
-        color: 'A5B4FC',
+        color: palette.titleEyebrow,
         margin: 0
     });
 
@@ -229,7 +333,7 @@ function renderTitleSlide(pptx, slide, deck, slideData, content, index) {
             h: 0.28,
             fontSize: 9,
             bold: true,
-            color: '818CF8',
+            color: palette.titleNum,
             align: 'center',
             valign: 'middle',
             margin: 0
@@ -252,16 +356,16 @@ function renderTitleSlide(pptx, slide, deck, slideData, content, index) {
     addFooter(slide, index, true);
 }
 
-function renderSectionSlide(pptx, slide, slideData, content, index) {
-    slide.background = { color: 'EEF2FF' };
+function renderSectionSlide(pptx, slide, slideData, content, index, palette) {
+    slide.background = { color: palette.sectionBg };
 
     slide.addShape(pptx.ShapeType.rect, {
         x: 0,
         y: 0,
         w: SLIDE_W,
         h: SLIDE_H,
-        fill: { color: 'EEF2FF' },
-        line: { color: 'EEF2FF', transparency: 100 }
+        fill: { color: palette.sectionBg },
+        line: { color: palette.sectionBg, transparency: 100 }
     });
 
     slide.addShape(pptx.ShapeType.rect, {
@@ -269,8 +373,8 @@ function renderSectionSlide(pptx, slide, slideData, content, index) {
         y: 0,
         w: 0.36,
         h: SLIDE_H,
-        fill: { color: '4338CA' },
-        line: { color: '4338CA', transparency: 100 }
+        fill: { color: palette.primaryDark },
+        line: { color: palette.primaryDark, transparency: 100 }
     });
 
     slide.addText(`SECTION ${String(index + 1).padStart(2, '0')}`, {
@@ -281,8 +385,8 @@ function renderSectionSlide(pptx, slide, slideData, content, index) {
         fontSize: 10,
         bold: true,
         charSpace: 1.5,
-        color: '4338CA',
-        fill: { color: 'E0E7FF' },
+        color: palette.primaryDark,
+        fill: { color: palette.sectionBadgeBg },
         align: 'center',
         valign: 'middle',
         margin: 0.04
@@ -295,7 +399,7 @@ function renderSectionSlide(pptx, slide, slideData, content, index) {
         h: 1.45,
         fontSize: 32,
         bold: true,
-        color: '1E1B4B',
+        color: palette.sectionTitle,
         valign: 'top',
         fit: 'shrink',
         breakLine: true,
@@ -311,7 +415,7 @@ function renderSectionSlide(pptx, slide, slideData, content, index) {
             h: 0.64,
             rectRadius: 0.06,
             fill: { color: 'FFFFFF' },
-            line: { color: 'C7D2FE' }
+            line: { color: palette.sectionCardBorder }
         });
 
         slide.addText(String(bullet), {
@@ -331,9 +435,9 @@ function renderSectionSlide(pptx, slide, slideData, content, index) {
     addFooter(slide, index, false);
 }
 
-function renderContentSlide(pptx, slide, slideData, content, index) {
-    addLightCanvas(pptx, slide);
-    addVisualPanel(pptx, slide, slideData.title);
+function renderContentSlide(pptx, slide, slideData, content, index, palette) {
+    addLightCanvas(pptx, slide, palette);
+    addVisualPanel(pptx, slide, slideData.title, palette);
 
     slide.addText(`SLIDE ${String(index + 1).padStart(2, '0')}`, {
         x: 0.75,
@@ -342,8 +446,8 @@ function renderContentSlide(pptx, slide, slideData, content, index) {
         h: 0.26,
         fontSize: 8.5,
         bold: true,
-        color: '4338CA',
-        fill: { color: 'EEECFF' },
+        color: palette.primaryDark,
+        fill: { color: palette.primaryBadgeBg },
         margin: 0.04,
         align: 'center',
         valign: 'middle'
@@ -383,8 +487,8 @@ function renderContentSlide(pptx, slide, slideData, content, index) {
             w: 0.3,
             h: 0.28,
             rectRadius: 0.04,
-            fill: { color: '4F46E5' },
-            line: { color: '4F46E5', transparency: 100 }
+            fill: { color: palette.primary },
+            line: { color: palette.primary, transparency: 100 }
         });
 
         slide.addText(String(bulletIndex + 1).padStart(2, '0'), {
@@ -417,8 +521,8 @@ function renderContentSlide(pptx, slide, slideData, content, index) {
     addFooter(slide, index, false);
 }
 
-function renderTwoColumnSlide(pptx, slide, slideData, content, index) {
-    addLightCanvas(pptx, slide);
+function renderTwoColumnSlide(pptx, slide, slideData, content, index, palette) {
+    addLightCanvas(pptx, slide, palette);
 
     slide.addText('TWO-COLUMN COMPARISON', {
         x: 0.72,
@@ -427,8 +531,8 @@ function renderTwoColumnSlide(pptx, slide, slideData, content, index) {
         h: 0.26,
         fontSize: 8.5,
         bold: true,
-        color: '4338CA',
-        fill: { color: 'EEECFF' },
+        color: palette.primaryDark,
+        fill: { color: palette.primaryBadgeBg },
         align: 'center',
         valign: 'middle',
         margin: 0.04
@@ -456,15 +560,15 @@ function renderTwoColumnSlide(pptx, slide, slideData, content, index) {
         {
             x: 0.72,
             header: 'COLUMN 01 • PRIMARY PERSPECTIVE',
-            accent: '4F46E5',
-            tint: 'EEF2FF',
+            accent: palette.primary,
+            tint: palette.primaryTint,
             items: leftItems
         },
         {
             x: 6.86,
             header: 'COLUMN 02 • COUNTERPART & GUARDRAILS',
-            accent: '0D9488',
-            tint: 'F0FDFA',
+            accent: palette.secondary,
+            tint: palette.secondaryTint,
             items: rightItems
         }
     ];
@@ -534,7 +638,7 @@ function renderTwoColumnSlide(pptx, slide, slideData, content, index) {
     addFooter(slide, index, false);
 }
 
-function renderSummarySlide(pptx, slide, slideData, content, index) {
+function renderSummarySlide(pptx, slide, slideData, content, index, palette) {
     slide.background = { color: 'F8FAFC' };
 
     slide.addShape(pptx.ShapeType.rect, {
@@ -551,8 +655,8 @@ function renderSummarySlide(pptx, slide, slideData, content, index) {
         y: 0,
         w: SLIDE_W,
         h: 0.14,
-        fill: { color: '4F46E5' },
-        line: { color: '4F46E5', transparency: 100 }
+        fill: { color: palette.primary },
+        line: { color: palette.primary, transparency: 100 }
     });
 
     slide.addText('KEY TAKEAWAYS & SUMMARY', {
@@ -563,8 +667,8 @@ function renderSummarySlide(pptx, slide, slideData, content, index) {
         fontSize: 9,
         bold: true,
         charSpace: 1.2,
-        color: '0F766E',
-        fill: { color: 'CCFBF1' },
+        color: palette.secondaryDark,
+        fill: { color: palette.secondaryBadgeBg },
         align: 'center',
         valign: 'middle',
         margin: 0.04
@@ -604,8 +708,8 @@ function renderSummarySlide(pptx, slide, slideData, content, index) {
             w: 1.18,
             h: 0.38,
             rectRadius: 0.04,
-            fill: { color: '0F172A' },
-            line: { color: '0F172A', transparency: 100 }
+            fill: { color: palette.titleBg },
+            line: { color: palette.titleBg, transparency: 100 }
         });
 
         slide.addText(`TAKEAWAY ${bulletIndex + 1}`, {
@@ -640,6 +744,7 @@ function renderSummarySlide(pptx, slide, slideData, content, index) {
 
 export async function buildPptx(deck, slides) {
     const pptx = new pptxgen();
+    const palette = resolvePptxPalette(deck?.theme);
     pptx.layout = 'LAYOUT_WIDE';
     pptx.author = 'DeckAI';
     pptx.subject = deck.topic || deck.title || 'DeckAI Presentation';
@@ -658,20 +763,20 @@ export async function buildPptx(deck, slides) {
 
         switch (layout) {
             case 'title':
-                renderTitleSlide(pptx, slide, deck, slideData, content, index);
+                renderTitleSlide(pptx, slide, deck, slideData, content, index, palette);
                 break;
             case 'section':
-                renderSectionSlide(pptx, slide, slideData, content, index);
+                renderSectionSlide(pptx, slide, slideData, content, index, palette);
                 break;
             case 'two_column':
-                renderTwoColumnSlide(pptx, slide, slideData, content, index);
+                renderTwoColumnSlide(pptx, slide, slideData, content, index, palette);
                 break;
             case 'summary':
-                renderSummarySlide(pptx, slide, slideData, content, index);
+                renderSummarySlide(pptx, slide, slideData, content, index, palette);
                 break;
             case 'content':
             default:
-                renderContentSlide(pptx, slide, slideData, content, index);
+                renderContentSlide(pptx, slide, slideData, content, index, palette);
                 break;
         }
 

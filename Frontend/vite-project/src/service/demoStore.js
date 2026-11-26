@@ -4,6 +4,21 @@ export const DEMO_STORAGE_KEY = 'deckai_browser_demo_v1';
 export const DEMO_TOKEN = 'deckai-browser-demo-token';
 
 const VALID_LAYOUTS = new Set(['title', 'content', 'two_column', 'section', 'summary']);
+const VALID_THEMES = new Set(['indigo', 'emerald', 'amber', 'coral']);
+
+function normalizeDeckTheme(value) {
+  const cleaned = String(value || '').trim().toLowerCase();
+  return VALID_THEMES.has(cleaned) ? cleaned : 'indigo';
+}
+
+function buildCopyLabel(rawValue = '', fallback = 'Untitled', maxLen = 200) {
+  const base = String(rawValue || '').trim() || fallback;
+  const suffix = ' (Copy)';
+  if (base.length + suffix.length <= maxLen) {
+    return `${base}${suffix}`;
+  }
+  return `${base.slice(0, maxLen - suffix.length).trimEnd()}${suffix}`;
+}
 
 function makeId(prefix = 'demo') {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -38,6 +53,7 @@ function createSeedWorkspace() {
         'Executive rollout plan covering workflow selection, security guardrails, ROI metrics, and phased deployment.',
       language: 'English',
       tone: 'professional',
+      theme: 'indigo',
       slideCount: 5,
       status: 'ready',
       outline: {
@@ -91,6 +107,7 @@ function createSeedWorkspace() {
         'Investor narrative framing grid reliability pain points, unit economics, commercial traction, and capital allocation.',
       language: 'English',
       tone: 'persuasive',
+      theme: 'emerald',
       slideCount: 5,
       status: 'outline_ready',
       outline: {
@@ -468,6 +485,7 @@ export const demoStore = {
       description: String(data.description || ''),
       language: data.language || 'English',
       tone: data.tone || 'professional',
+      theme: normalizeDeckTheme(data.theme),
       slideCount: Math.min(10, Math.max(1, Number(data.slideCount) || 5)),
       status: 'draft',
       outline: { sections: [] },
@@ -487,13 +505,70 @@ export const demoStore = {
         deck[key] = data[key];
       }
     });
+    if (data.theme !== undefined) {
+      deck.theme = normalizeDeckTheme(data.theme);
+    }
     if (data.slideCount !== undefined) {
       deck.slideCount = Math.min(10, Math.max(1, Number(data.slideCount) || deck.slideCount));
     }
-    deck.status = 'draft';
+    const briefFields = ['topic', 'description', 'language', 'tone', 'slideCount'];
+    if (briefFields.some((key) => data[key] !== undefined)) {
+      deck.status = 'draft';
+    }
     deck.updatedAt = new Date().toISOString();
     writeWorkspace(state);
     return { deck };
+  },
+
+  async duplicateDeck(deckId) {
+    const state = requireWorkspace();
+    const source = findDeckOrThrow(state, deckId);
+    const now = new Date().toISOString();
+    const sourceSlides = state.slides
+      .filter((slide) => slide.deckId === deckId)
+      .sort((a, b) => a.slideNumber - b.slideNumber);
+    const clonedDeckId = makeId('deck');
+    const clonedDeck = {
+      _id: clonedDeckId,
+      userId: state.user.id,
+      title: buildCopyLabel(source.title || source.topic, 'Untitled Presentation', 200),
+      topic: source.topic,
+      description: source.description || '',
+      language: source.language || 'English',
+      tone: source.tone || 'professional',
+      theme: normalizeDeckTheme(source.theme),
+      slideCount: sourceSlides.length > 0 ? sourceSlides.length : source.slideCount,
+      status: source.status,
+      outline: {
+        sections: Array.isArray(source.outline?.sections)
+          ? source.outline.sections.map((section, idx) => ({
+              id: makeId('sec'),
+              title: section.title,
+              summary: section.summary || '',
+              order: section.order || idx + 1,
+            }))
+          : [],
+      },
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const clonedSlides = sourceSlides.map((slide, idx) => ({
+      _id: makeId('slide'),
+      deckId: clonedDeckId,
+      slideNumber: idx + 1,
+      title: slide.title,
+      content: Array.isArray(slide.content) ? [...slide.content] : [],
+      speakerNotes: slide.speakerNotes || '',
+      layout: VALID_LAYOUTS.has(slide.layout) ? slide.layout : 'content',
+      createdAt: now,
+      updatedAt: now,
+    }));
+
+    state.decks.unshift(clonedDeck);
+    state.slides.push(...clonedSlides);
+    writeWorkspace(state);
+    return { deck: clonedDeck };
   },
 
   async deleteDeck(deckId) {
@@ -611,6 +686,50 @@ export const demoStore = {
     deck.updatedAt = now;
     writeWorkspace(state);
     return { slide };
+  },
+
+  async duplicateSlide(slideId) {
+    const state = requireWorkspace();
+    const source = findSlideOrThrow(state, slideId);
+    const deck = findDeckOrThrow(state, source.deckId);
+    const deckSlides = state.slides
+      .filter((item) => item.deckId === source.deckId)
+      .sort((a, b) => a.slideNumber - b.slideNumber);
+
+    if (deckSlides.length >= 10) {
+      throw new Error('A deck can contain at most 10 slides');
+    }
+
+    const now = new Date().toISOString();
+    const duplicated = {
+      _id: makeId('slide'),
+      deckId: source.deckId,
+      slideNumber: deckSlides.length + 1,
+      title: buildCopyLabel(source.title, 'Untitled slide', 200),
+      content: Array.isArray(source.content) ? [...source.content] : [],
+      speakerNotes: String(source.speakerNotes || ''),
+      layout: VALID_LAYOUTS.has(source.layout) ? source.layout : 'content',
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    const sourceIndex = deckSlides.findIndex((item) => item._id === source._id);
+    const insertIndex = sourceIndex >= 0 ? sourceIndex + 1 : deckSlides.length;
+    const reordered = [...deckSlides];
+    reordered.splice(insertIndex, 0, duplicated);
+    reordered.forEach((item, idx) => {
+      item.slideNumber = idx + 1;
+    });
+
+    state.slides.push(duplicated);
+    deck.slideCount = reordered.length;
+    deck.updatedAt = now;
+    writeWorkspace(state);
+
+    const slides = state.slides
+      .filter((item) => item.deckId === source.deckId)
+      .sort((a, b) => a.slideNumber - b.slideNumber);
+    return { slide: duplicated, slides };
   },
 
   async updateSlide(slideId, data = {}) {
@@ -799,7 +918,7 @@ export const demoStore = {
     }
 
     const result = await exportDeckPptxClient(
-      { title: deck.title, topic: deck.topic },
+      { title: deck.title, topic: deck.topic, theme: deck.theme || 'indigo' },
       slides
     );
 

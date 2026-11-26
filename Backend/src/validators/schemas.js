@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 const toneEnum = z.enum(['professional', 'academic', 'simple', 'persuasive']);
+const themeEnum = z.enum(['indigo', 'emerald', 'amber', 'coral']);
 const languageEnum = z.enum(['English', 'en']);
 const layoutEnum = z.enum(['title', 'content', 'two_column', 'section', 'summary']);
 const objectIdString = z.string().trim().regex(/^[0-9a-fA-F]{24}$/, 'Invalid ObjectId');
@@ -57,6 +58,7 @@ export const createDeckSchema = z.object({
     description: z.string().trim().max(2000).optional().default(''),
     language: languageEnum.optional().default('English'),
     tone: toneEnum,
+    theme: themeEnum.optional().default('indigo'),
     slideCount: slideCountField
 });
 
@@ -66,6 +68,7 @@ export const updateDeckSchema = z.object({
     description: z.string().trim().max(2000).optional(),
     language: languageEnum.optional(),
     tone: toneEnum.optional(),
+    theme: themeEnum.optional(),
     slideCount: slideCountField.optional()
 });
 
