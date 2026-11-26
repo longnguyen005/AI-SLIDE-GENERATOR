@@ -92,8 +92,13 @@ export async function duplicateSlide(req, res) {
     const orderedIds = existingSlides.map((item) => item._id);
     orderedIds.splice(insertIndex, 0, duplicated._id);
 
-    await assignSlideNumbers(orderedIds);
-    await Deck.findByIdAndUpdate(source.deckId, { slideCount: orderedIds.length });
+    try {
+        await assignSlideNumbers(orderedIds);
+        await Deck.findByIdAndUpdate(source.deckId, { slideCount: orderedIds.length });
+    } catch (error) {
+        await duplicated.deleteOne().catch(() => {});
+        throw error;
+    }
 
     const updatedSlides = await Slide.find({ deckId: source.deckId }).sort({ slideNumber: 1 });
     const refreshedSlide = updatedSlides.find((item) => item._id.equals(duplicated._id)) || duplicated;

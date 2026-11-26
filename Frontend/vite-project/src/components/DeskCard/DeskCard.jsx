@@ -104,6 +104,7 @@ export default function DeckCard({
         <div className="deck-card__tags">
           <span className={isReady ? 'is-ready' : 'is-draft'}>{statusLabel}</span>
           {deck?.tone && <span>{String(deck.tone)}</span>}
+          {deck?.theme && <span>{resolvedTheme}</span>}
         </div>
 
         <div className="deck-card__actions">
@@ -151,7 +152,7 @@ export default function DeckCard({
               type="button"
               className="deck-card__action deck-card__action--danger"
               onClick={() => onDelete(deck)}
-              disabled={deleting}
+              disabled={deleting || duplicating}
               aria-label={`Delete ${title}`}
             >
               <Icon name="trash" size={14} /> {deleting ? 'Deleting...' : 'Delete'}

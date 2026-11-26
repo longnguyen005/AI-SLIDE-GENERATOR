@@ -490,7 +490,7 @@
   }
 }
 
-@media (max-width: 1100px) {
+@media screen and (max-width: 1100px) {
   .slide-canvas {
     grid-template-columns: 1fr;
     aspect-ratio: auto;
@@ -508,7 +508,7 @@
   }
 }
 
-@media (max-width: 760px) {
+@media screen and (max-width: 760px) {
   .slide-canvas {
     min-height: 380px;
   }

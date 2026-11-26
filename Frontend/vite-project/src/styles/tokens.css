@@ -256,3 +256,62 @@
   --accent-text:      #fda4af;
   --deck-visual-glow: rgba(244, 63, 94, 0.32);
 }
+
+@media print {
+  :root[data-theme="dark"] {
+    color-scheme: light;
+    --bg:               #f7f8f8;
+    --bg-panel:         #f3f4f5;
+    --surface:          #ffffff;
+    --surface-elevated: #ffffff;
+    --surface-glass:    rgba(255, 255, 255, 0.84);
+    --fg:               #111315;
+    --fg-2:             #3c4149;
+    --muted:            #62666d;
+    --meta:             #8a8f98;
+    --border:           #e2e5ea;
+    --border-soft:      #eef0f3;
+    --border-strong:    #cdd2da;
+    --accent:           #5e6ad2;
+    --accent-on:        #ffffff;
+    --accent-hover:     #4752c4;
+    --accent-active:    #3c46b0;
+    --accent-soft:      rgba(94, 106, 210, 0.10);
+    --accent-border:    rgba(94, 106, 210, 0.28);
+    --accent-text:      #4752c4;
+    --deck-visual-glow: rgba(94, 106, 210, 0.28);
+  }
+
+  :root[data-theme="dark"] [data-deck-theme="emerald"] {
+    --accent:           #0d9488;
+    --accent-on:        #ffffff;
+    --accent-hover:     #0f766e;
+    --accent-active:    #115e59;
+    --accent-soft:      rgba(13, 148, 136, 0.11);
+    --accent-border:    rgba(13, 148, 136, 0.30);
+    --accent-text:      #0f766e;
+    --deck-visual-glow: rgba(16, 185, 129, 0.28);
+  }
+
+  :root[data-theme="dark"] [data-deck-theme="amber"] {
+    --accent:           #d97706;
+    --accent-on:        #ffffff;
+    --accent-hover:     #b45309;
+    --accent-active:    #92400e;
+    --accent-soft:      rgba(217, 119, 6, 0.11);
+    --accent-border:    rgba(217, 119, 6, 0.30);
+    --accent-text:      #b45309;
+    --deck-visual-glow: rgba(245, 158, 11, 0.28);
+  }
+
+  :root[data-theme="dark"] [data-deck-theme="coral"] {
+    --accent:           #e11d48;
+    --accent-on:        #ffffff;
+    --accent-hover:     #be123c;
+    --accent-active:    #9f1239;
+    --accent-soft:      rgba(225, 29, 72, 0.10);
+    --accent-border:    rgba(225, 29, 72, 0.28);
+    --accent-text:      #be123c;
+    --deck-visual-glow: rgba(244, 63, 94, 0.28);
+  }
+}

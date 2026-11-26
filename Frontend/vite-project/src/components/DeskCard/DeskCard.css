@@ -214,12 +214,12 @@
 }
 
 .deck-card__cover--simple .deck-card__eyebrow {
-  color: var(--success-text);
+  color: var(--accent-text);
 }
 
 .deck-card__cover--simple .deck-card__bar--primary {
   width: 52%;
-  background: color-mix(in oklab, var(--success), transparent 52%);
+  background: color-mix(in oklab, var(--accent), transparent 48%);
 }
 
 /* ─── Card Body & Actions ────────────────────────────────────────────────── */

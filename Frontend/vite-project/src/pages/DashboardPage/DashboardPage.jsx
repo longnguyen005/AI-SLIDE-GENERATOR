@@ -108,7 +108,7 @@ export default function DashboardPage() {
 
   const handleDeleteDeck = async (deck) => {
     const deckId = deck._id || deck.id;
-    if (!deckId || deletingId) return;
+    if (!deckId || deletingId || duplicatingId) return;
     setDeletingId(deckId);
     setNotice('');
     try {

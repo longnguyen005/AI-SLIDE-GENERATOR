@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { useParams } from 'react-router-dom';
 import Sidebar from '../../components/SideBar/SideBar';
@@ -29,6 +29,7 @@ export default function PreviewPage() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [largeNotes, setLargeNotes] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
+  const isPrintingRef = useRef(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(Boolean(deckId));
@@ -55,6 +56,9 @@ export default function PreviewPage() {
     let active = true;
 
     async function loadPreviewWorkspace() {
+      setLoading(true);
+      setMessage('');
+      setElapsedSeconds(0);
       try {
         const [slidesResult, deckResult] = await Promise.all([
           api.getSlides(deckId),
@@ -87,8 +91,20 @@ export default function PreviewPage() {
   }, [presenterMode, timerRunning]);
 
   useEffect(() => {
-    const onBeforePrint = () => setIsPrinting(true);
-    const onAfterPrint = () => setIsPrinting(false);
+    const onBeforePrint = () => {
+      if (isPrintingRef.current) return;
+      isPrintingRef.current = true;
+      flushSync(() => {
+        setIsPrinting(true);
+      });
+    };
+    const onAfterPrint = () => {
+      if (!isPrintingRef.current) return;
+      isPrintingRef.current = false;
+      flushSync(() => {
+        setIsPrinting(false);
+      });
+    };
     window.addEventListener('beforeprint', onBeforePrint);
     window.addEventListener('afterprint', onAfterPrint);
     return () => {
@@ -99,7 +115,17 @@ export default function PreviewPage() {
 
   useEffect(() => {
     const handler = (event) => {
-      if (modalOpen || event.ctrlKey || event.metaKey || event.altKey) return;
+      if (
+        loading ||
+        slides.length === 0 ||
+        modalOpen ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.altKey ||
+        Boolean(document.querySelector('[role="dialog"]'))
+      ) {
+        return;
+      }
       const target = event.target;
       const tag = target?.tagName;
       if (
@@ -135,7 +161,7 @@ export default function PreviewPage() {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [slides.length, modalOpen]);
+  }, [loading, slides.length, modalOpen]);
 
   const enterFullscreen = async () => {
     try {
@@ -147,12 +173,14 @@ export default function PreviewPage() {
 
   const handlePrintPdf = () => {
     if (!slides.length) return;
+    isPrintingRef.current = true;
     flushSync(() => {
       setIsPrinting(true);
     });
     try {
       window.print?.();
     } finally {
+      isPrintingRef.current = false;
       flushSync(() => {
         setIsPrinting(false);
       });

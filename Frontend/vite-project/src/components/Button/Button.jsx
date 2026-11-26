@@ -12,5 +12,13 @@ export default function Button({ children, icon, iconRight, to, variant = 'prima
     </>
   );
   const classes = `btn btn--${variant} ${className}`.trim();
-  return to ? <Link to={to} className={classes}>{content}</Link> : <button className={classes} {...props}>{content}</button>;
+  return to ? (
+    <Link to={to} className={classes} {...props}>
+      {content}
+    </Link>
+  ) : (
+    <button className={classes} {...props}>
+      {content}
+    </button>
+  );
 }

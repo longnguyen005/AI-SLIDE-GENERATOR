@@ -624,6 +624,8 @@
   .demo-sandbox-banner,
   .sidebar,
   .sidebar-toggle,
+  .sidebar-popup-backdrop,
+  .modal-backdrop,
   .topbar,
   .preview-message,
   .preview-workspace,
@@ -646,6 +648,27 @@
   .preview-print-deck {
     display: grid !important;
     gap: 16px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .preview-print-deck * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .preview-print-deck .slide-canvas {
+    min-height: 0 !important;
+    width: 100%;
+    box-shadow: none !important;
+  }
+
+  .preview-print-deck .slide-canvas,
+  .preview-print-deck .slide-canvas * {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
 
   .preview-print-page {

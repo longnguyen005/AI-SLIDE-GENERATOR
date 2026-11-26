@@ -215,6 +215,31 @@ describe('Phase 4: Deck Themes, Safe Metadata PATCH, Duplication & Themed PPTX E
         const originalSlides = slidesRes.body.slides;
         expect(originalSlides).toHaveLength(5);
 
+        // Invalid ObjectId returns 400
+        const invalidIdRes = await request(app)
+            .post('/api/slides/not-an-objectid/duplicate')
+            .set('Authorization', `Bearer ${token}`);
+        expect(invalidIdRes.status).toBe(400);
+
+        // Foreign user cannot duplicate target slide (404)
+        const otherReg = await request(app).post('/api/auth/register').send({
+            fullName: 'Slide Intruder',
+            email: 'intruder@deckai.app',
+            password: 'Password123!'
+        });
+        const foreignSlideDup = await request(app)
+            .post(`/api/slides/${originalSlides[1]._id}/duplicate`)
+            .set('Authorization', `Bearer ${otherReg.body.token}`);
+        expect(foreignSlideDup.status).toBe(404);
+
+        // 198-char slide title truncates cleanly within 200-char max
+        const longSlideTitle = `${'Zero-Trust Copilot Architecture '.repeat(7)}`.slice(0, 198);
+        await request(app)
+            .patch(`/api/slides/${originalSlides[1]._id}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send({ title: longSlideTitle })
+            .expect(200);
+
         // Duplicate slide 2 (index 1, layout 'section')
         const targetSlide = originalSlides[1];
         const dupSlideRes = await request(app)
@@ -227,7 +252,8 @@ describe('Phase 4: Deck Themes, Safe Metadata PATCH, Duplication & Themed PPTX E
         expect(duplicated.slideNumber).toBe(3);
         expect(duplicated.layout).toBe(targetSlide.layout);
         expect(duplicated.content).toEqual(targetSlide.content);
-        expect(duplicated.title).toContain('(Copy)');
+        expect(duplicated.title.length).toBeLessThanOrEqual(200);
+        expect(duplicated.title.endsWith('(Copy)')).toBe(true);
 
         expect(updatedSlides).toHaveLength(6);
         expect(updatedSlides.map((s) => s.slideNumber)).toEqual([1, 2, 3, 4, 5, 6]);
