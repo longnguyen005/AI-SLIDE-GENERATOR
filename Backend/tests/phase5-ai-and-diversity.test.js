@@ -111,6 +111,22 @@ describe('Phase 5 Backend: Gemini 2.5 Structured Outputs, 8-Layout Diversity, Sm
             value: '$18M',
             label: 'Series A capital committed across lead funds'
         });
+        expect(parseMetricBullet('91% verified source citation accuracy across internal docs', 0)).toEqual({
+            value: '91%',
+            label: 'verified source citation accuracy across internal docs'
+        });
+        expect(parseMetricBullet('34% faster turnaround across 240 pilot seats', 0)).toEqual({
+            value: '34% faster',
+            label: 'turnaround across 240 pilot seats'
+        });
+        expect(parseMetricBullet('$18/seat target monthly platform spend', 1)).toEqual({
+            value: '$18/seat',
+            label: 'target monthly platform spend'
+        });
+        const barePipeMetric = parseMetricBullet('|', 0);
+        expect(barePipeMetric.value).toBe('KPI 01');
+        expect(barePipeMetric.label).not.toContain('|');
+
         const plainMetric = parseMetricBullet('Plain narrative bullet with no numbers at all', 2);
         expect(plainMetric.value).toBeTruthy();
         expect(plainMetric.label).toContain('Plain narrative bullet');
@@ -378,6 +394,16 @@ describe('Phase 5 Backend: Gemini 2.5 Structured Outputs, 8-Layout Diversity, Sm
             .set('Authorization', `Bearer ${token}`);
         expect(dupRes.status).toBe(201);
         expect(dupRes.body.deck.outline.sections[1].suggestedLayout).toBe('metrics');
+
+        // Generating slides when idx=2 is Auto (undefined) right before idx=3 ('two_column') must NOT create adjacent middle duplicates
+        const genCustomSlidesRes = await request(app)
+            .post(`/api/decks/${customDeckId}/slides/generate`)
+            .set('Authorization', `Bearer ${token}`);
+        expect(genCustomSlidesRes.status).toBe(201);
+        const customMidLayouts = genCustomSlidesRes.body.slides.slice(1, 5).map((s) => s.layout);
+        for (let i = 1; i < customMidLayouts.length; i += 1) {
+            expect(customMidLayouts[i]).not.toBe(customMidLayouts[i - 1]);
+        }
     });
 
     it('supports scoped regeneration (notes / bullets / full) and explicit layout switching without accidental hijacking', async () => {

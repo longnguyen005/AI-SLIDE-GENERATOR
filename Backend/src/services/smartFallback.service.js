@@ -49,7 +49,7 @@ export function inferBestMiddleLayout(item = {}, index = 1) {
     return MIDDLE_ARCHETYPE_ROTATION[(index - 1) % MIDDLE_ARCHETYPE_ROTATION.length];
 }
 
-function pickNonCollidingMiddleLayout(preferred, prevLayout, usedSet, index) {
+function pickNonCollidingMiddleLayout(preferred, prevLayout, nextLayout, usedSet, index) {
     const candidates = [
         preferred,
         ...MIDDLE_ARCHETYPE_ROTATION.slice(index % MIDDLE_ARCHETYPE_ROTATION.length),
@@ -57,33 +57,58 @@ function pickNonCollidingMiddleLayout(preferred, prevLayout, usedSet, index) {
     ].filter((layout) => VALID_LAYOUTS.has(layout) && layout !== 'title' && layout !== 'summary');
 
     const unusedNonAdjacent = candidates.find(
-        (layout) => layout !== prevLayout && !usedSet.has(layout)
+        (layout) => layout !== prevLayout && layout !== nextLayout && !usedSet.has(layout)
     );
     if (unusedNonAdjacent) return unusedNonAdjacent;
 
-    const nonAdjacent = candidates.find((layout) => layout !== prevLayout);
-    return nonAdjacent || 'content';
+    const nonAdjacentBoth = candidates.find(
+        (layout) => layout !== prevLayout && layout !== nextLayout
+    );
+    if (nonAdjacentBoth) return nonAdjacentBoth;
+
+    const nonPrev = candidates.find((layout) => layout !== prevLayout);
+    return nonPrev || 'content';
 }
 
 export function enforceOutlineDiversity(rawSections = []) {
     const total = rawSections.length;
+    const reservedMiddle = new Set(
+        rawSections
+            .slice(1, Math.max(1, total - 1))
+            .map((s) => s?.suggestedLayout)
+            .filter((l) => VALID_LAYOUTS.has(l) && l !== 'title' && l !== 'summary')
+    );
     const usedMiddle = new Set();
     let prevLayout = null;
 
     return rawSections.map((section, index) => {
         const explicit = VALID_LAYOUTS.has(section.suggestedLayout) ? section.suggestedLayout : null;
+        const nextExplicit = VALID_LAYOUTS.has(rawSections[index + 1]?.suggestedLayout)
+            ? rawSections[index + 1].suggestedLayout
+            : null;
         let layout;
 
         if (index === 0) {
             layout = explicit || 'title';
         } else if (total >= 3 && index === total - 1) {
             layout = explicit || 'summary';
-        } else if (explicit && explicit !== 'title' && explicit !== 'summary' && explicit !== prevLayout) {
+        } else if (
+            explicit &&
+            explicit !== 'title' &&
+            explicit !== 'summary' &&
+            explicit !== prevLayout
+        ) {
             layout = explicit;
             usedMiddle.add(layout);
         } else {
             const inferred = inferBestMiddleLayout(section, index);
-            layout = pickNonCollidingMiddleLayout(inferred, prevLayout, usedMiddle, index);
+            layout = pickNonCollidingMiddleLayout(
+                inferred,
+                prevLayout,
+                nextExplicit,
+                new Set([...usedMiddle, ...reservedMiddle]),
+                index
+            );
             usedMiddle.add(layout);
         }
 
@@ -187,12 +212,21 @@ export function enforceSlideDiversity(rawSlides = [], outlineSections = [], deck
         return buildSmartSlideForSection(deckContext, section || { title: `Slide ${index + 1}`, summary: '' }, index, targetCount);
     });
 
+    const reservedMiddle = new Set(
+        outlineSections
+            .slice(1, Math.max(1, targetCount - 1))
+            .map((s) => s?.suggestedLayout)
+            .filter((l) => VALID_LAYOUTS.has(l) && l !== 'title' && l !== 'summary')
+    );
     const usedMiddle = new Set();
     let prevLayout = null;
 
     return aligned.map((slide, index) => {
         const section = outlineSections[index];
         const pinnedLayout = VALID_LAYOUTS.has(section?.suggestedLayout) ? section.suggestedLayout : null;
+        const nextPinnedLayout = VALID_LAYOUTS.has(outlineSections[index + 1]?.suggestedLayout)
+            ? outlineSections[index + 1].suggestedLayout
+            : null;
         const rawLayout = VALID_LAYOUTS.has(slide?.layout) ? slide.layout : null;
         let finalLayout;
 
@@ -214,7 +248,7 @@ export function enforceSlideDiversity(rawSlides = [], outlineSections = [], deck
                 !rawLayout ||
                 rawLayout === 'title' ||
                 rawLayout === 'summary' ||
-                (targetCount >= 4 && rawLayout === prevLayout) ||
+                (targetCount >= 4 && (rawLayout === prevLayout || rawLayout === nextPinnedLayout)) ||
                 (rawLayout === 'content' && inferred !== 'content' && usedMiddle.has('content'));
 
             if (!rawIsGenericDuplicate) {
@@ -223,7 +257,8 @@ export function enforceSlideDiversity(rawSlides = [], outlineSections = [], deck
                 finalLayout = pickNonCollidingMiddleLayout(
                     inferred !== 'content' ? inferred : rawLayout || inferred,
                     prevLayout,
-                    usedMiddle,
+                    nextPinnedLayout,
+                    new Set([...usedMiddle, ...reservedMiddle]),
                     index
                 );
             }

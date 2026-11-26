@@ -50,7 +50,7 @@ export function inferBestMiddleLayout(item = {}, index = 1) {
   return MIDDLE_ARCHETYPE_ROTATION[(index - 1) % MIDDLE_ARCHETYPE_ROTATION.length];
 }
 
-function pickNonCollidingMiddleLayout(preferred, prevLayout, usedSet, index) {
+function pickNonCollidingMiddleLayout(preferred, prevLayout, nextLayout, usedSet, index) {
   const candidates = [
     preferred,
     ...MIDDLE_ARCHETYPE_ROTATION.slice(index % MIDDLE_ARCHETYPE_ROTATION.length),
@@ -58,21 +58,35 @@ function pickNonCollidingMiddleLayout(preferred, prevLayout, usedSet, index) {
   ].filter((layout) => VALID_LAYOUTS.has(layout) && layout !== 'title' && layout !== 'summary');
 
   const unusedNonAdjacent = candidates.find(
-    (layout) => layout !== prevLayout && !usedSet.has(layout)
+    (layout) => layout !== prevLayout && layout !== nextLayout && !usedSet.has(layout)
   );
   if (unusedNonAdjacent) return unusedNonAdjacent;
 
-  const nonAdjacent = candidates.find((layout) => layout !== prevLayout);
-  return nonAdjacent || 'content';
+  const nonAdjacentBoth = candidates.find(
+    (layout) => layout !== prevLayout && layout !== nextLayout
+  );
+  if (nonAdjacentBoth) return nonAdjacentBoth;
+
+  const nonPrev = candidates.find((layout) => layout !== prevLayout);
+  return nonPrev || 'content';
 }
 
 export function enforceOutlineDiversity(rawSections = [], createId = () => `sec-${Date.now()}`) {
   const total = rawSections.length;
+  const reservedMiddle = new Set(
+    rawSections
+      .slice(1, Math.max(1, total - 1))
+      .map((s) => s?.suggestedLayout)
+      .filter((l) => VALID_LAYOUTS.has(l) && l !== 'title' && l !== 'summary')
+  );
   const usedMiddle = new Set();
   let prevLayout = null;
 
   return rawSections.map((section, index) => {
     const explicit = VALID_LAYOUTS.has(section.suggestedLayout) ? section.suggestedLayout : null;
+    const nextExplicit = VALID_LAYOUTS.has(rawSections[index + 1]?.suggestedLayout)
+      ? rawSections[index + 1].suggestedLayout
+      : null;
     let layout;
 
     if (index === 0) {
@@ -84,7 +98,13 @@ export function enforceOutlineDiversity(rawSections = [], createId = () => `sec-
       usedMiddle.add(layout);
     } else {
       const inferred = inferBestMiddleLayout(section, index);
-      layout = pickNonCollidingMiddleLayout(inferred, prevLayout, usedMiddle, index);
+      layout = pickNonCollidingMiddleLayout(
+        inferred,
+        prevLayout,
+        nextExplicit,
+        new Set([...usedMiddle, ...reservedMiddle]),
+        index
+      );
       usedMiddle.add(layout);
     }
 
@@ -270,6 +290,12 @@ export function buildSmartOutlineSections(topic, description, tone, slideCount, 
 export function buildSmartSlidesFromOutline(deck, sections, createId) {
   const total = sections.length;
   const topic = cleanTopicPhrase(deck.topic || deck.title);
+  const reservedMiddle = new Set(
+    sections
+      .slice(1, Math.max(1, total - 1))
+      .map((s) => s?.suggestedLayout)
+      .filter((l) => VALID_LAYOUTS.has(l) && l !== 'title' && l !== 'summary')
+  );
   const usedMiddle = new Set();
   let prevLayout = null;
 
@@ -280,6 +306,9 @@ export function buildSmartSlidesFromOutline(deck, sections, createId) {
     const secondaryStat = stats[1] || '99.4% Target';
 
     const pinned = VALID_LAYOUTS.has(section.suggestedLayout) ? section.suggestedLayout : null;
+    const nextPinned = VALID_LAYOUTS.has(sections[index + 1]?.suggestedLayout)
+      ? sections[index + 1].suggestedLayout
+      : null;
     let layout;
     if (pinned) {
       layout = pinned;
@@ -290,7 +319,13 @@ export function buildSmartSlidesFromOutline(deck, sections, createId) {
       layout = 'summary';
     } else {
       const inferred = inferBestMiddleLayout(section, index);
-      layout = pickNonCollidingMiddleLayout(inferred, prevLayout, usedMiddle, index);
+      layout = pickNonCollidingMiddleLayout(
+        inferred,
+        prevLayout,
+        nextPinned,
+        new Set([...usedMiddle, ...reservedMiddle]),
+        index
+      );
       usedMiddle.add(layout);
     }
     prevLayout = layout;

@@ -51,6 +51,15 @@ describe('Phase 5 Frontend: 8-Layout SlideCanvas, Client PPTX & Smart Demo AI', 
       value: '34% Faster',
       label: 'Support cycle dropped from 38m to 25m',
     });
+    expect(parseMetricBullet('91% verified source citation accuracy', 0)).toEqual({
+      value: '91%',
+      label: 'verified source citation accuracy',
+    });
+    expect(parseMetricBullet('$18/seat monthly unit cost target', 1)).toEqual({
+      value: '$18/seat',
+      label: 'monthly unit cost target',
+    });
+    expect(parseMetricBullet('|', 0).label).not.toContain('|');
     expect(parseTimelineBullet('Phase 1 (Days 1-30): Audit IAM policies', 0)).toEqual({
       stage: 'Phase 1 (Days 1-30)',
       detail: 'Audit IAM policies',
@@ -199,6 +208,14 @@ describe('Phase 5 Frontend: 8-Layout SlideCanvas, Client PPTX & Smart Demo AI', 
     });
     const { outline: customOutline } = await api.generateOutline(customDeck._id);
     expect(customOutline.sections).toHaveLength(6);
+    // Clear idx=2 to Auto right before idx=3 ('two_column') to verify lookahead anti-collision
+    await api.updateOutline(
+      customDeck._id,
+      customOutline.sections.map((sec, idx) => ({
+        ...sec,
+        suggestedLayout: idx === 1 ? 'metrics' : idx === 2 ? '' : sec.suggestedLayout,
+      }))
+    );
     const { slides: customSlides } = await api.generateSlides(customDeck._id);
     const middleLayouts = customSlides.slice(1, 5).map((s) => s.layout);
     for (let i = 1; i < middleLayouts.length; i += 1) {

@@ -60,6 +60,7 @@ export default function RegenerateModal({ open, onClose, onRegenerate }) {
   const [selected, setSelected] = useState('');
   const [instruction, setInstruction] = useState('');
   const [allowLayoutChange, setAllowLayoutChange] = useState(false);
+  const [layoutTouched, setLayoutTouched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -73,6 +74,7 @@ export default function RegenerateModal({ open, onClose, onRegenerate }) {
     setInstruction('');
     setTarget('full');
     setAllowLayoutChange(false);
+    setLayoutTouched(false);
   };
 
   const handleSelectPreset = (preset) => {
@@ -81,12 +83,14 @@ export default function RegenerateModal({ open, onClose, onRegenerate }) {
       setTarget(preset.target);
     }
     setAllowLayoutChange(Boolean(preset.allowLayoutChange));
+    setLayoutTouched(false);
   };
 
   const handleSelectScope = (nextTarget) => {
     setTarget(nextTarget);
     if (nextTarget === 'notes') {
       setAllowLayoutChange(false);
+      setLayoutTouched(false);
       if (activePreset?.preferredLayout) {
         setSelected('');
       }
@@ -97,8 +101,9 @@ export default function RegenerateModal({ open, onClose, onRegenerate }) {
     setError('');
     setLoading(true);
     try {
+      const trimmedCustom = instruction.trim();
       const effectiveInstruction =
-        instruction.trim() ||
+        trimmedCustom ||
         activePreset?.instruction ||
         (target === 'notes'
           ? 'Write presenter coaching notes with smooth transitions'
@@ -106,16 +111,30 @@ export default function RegenerateModal({ open, onClose, onRegenerate }) {
             ? 'Sharpen bullet points with concrete evidence'
             : 'Improve this slide');
 
-      const canSwitchLayout =
-        target !== 'notes' && Boolean(allowLayoutChange || activePreset?.allowLayoutChange);
+      const resolvedAllowLayoutChange =
+        target === 'notes'
+          ? false
+          : allowLayoutChange
+            ? true
+            : layoutTouched
+              ? false
+              : undefined;
+
+      const resolvedPreferredLayout =
+        target !== 'notes' &&
+        allowLayoutChange &&
+        !trimmedCustom &&
+        activePreset?.preferredLayout
+          ? activePreset.preferredLayout
+          : undefined;
 
       await onRegenerate?.({
         instruction: effectiveInstruction,
         target,
-        allowLayoutChange: canSwitchLayout,
-        ...(target !== 'notes' && activePreset?.preferredLayout
-          ? { preferredLayout: activePreset.preferredLayout }
+        ...(resolvedAllowLayoutChange !== undefined
+          ? { allowLayoutChange: resolvedAllowLayoutChange }
           : {}),
+        ...(resolvedPreferredLayout ? { preferredLayout: resolvedPreferredLayout } : {}),
       });
       resetState();
       onClose();
@@ -189,8 +208,11 @@ export default function RegenerateModal({ open, onClose, onRegenerate }) {
               <input
                 id="regenerate-allow-layout"
                 type="checkbox"
-                checked={Boolean(allowLayoutChange || activePreset?.allowLayoutChange)}
-                onChange={(event) => setAllowLayoutChange(event.target.checked)}
+                checked={allowLayoutChange}
+                onChange={(event) => {
+                  setAllowLayoutChange(event.target.checked);
+                  setLayoutTouched(true);
+                }}
                 disabled={loading}
               />
               <span>Allow AI to switch to a better slide layout</span>

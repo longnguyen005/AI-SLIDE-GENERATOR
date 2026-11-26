@@ -47,6 +47,32 @@ function ensureSectionIds(rawSections = []) {
   }));
 }
 
+function sanitizeUnpinnedCollisions(list = []) {
+  const copy = list.map((item, idx) => {
+    let nextLayout = VALID_LAYOUTS.has(item.suggestedLayout) ? item.suggestedLayout : '';
+    if (!item.layoutPinned) {
+      if (nextLayout === 'title' && idx !== 0) nextLayout = '';
+      if (nextLayout === 'summary' && idx !== list.length - 1) nextLayout = '';
+    }
+    return { ...item, suggestedLayout: nextLayout, order: idx + 1 };
+  });
+
+  for (let i = 0; i < copy.length; i += 1) {
+    const current = copy[i];
+    if (!current.suggestedLayout || current.layoutPinned) continue;
+    const prevLayout = copy[i - 1]?.suggestedLayout;
+    const nextLayout = copy[i + 1]?.suggestedLayout;
+    if (
+      (prevLayout && prevLayout === current.suggestedLayout) ||
+      (nextLayout && nextLayout === current.suggestedLayout && copy[i + 1]?.layoutPinned)
+    ) {
+      copy[i] = { ...current, suggestedLayout: '' };
+    }
+  }
+
+  return copy;
+}
+
 function normalizeSectionsForSave(list = []) {
   return list.map((section, idx) => {
     const trimmedTitle = String(section.title ?? '').trim();
@@ -143,14 +169,16 @@ export default function OutlinePage() {
 
   const updateSectionLayout = (index, layoutValue) => {
     setSections((current) =>
-      current.map((section, sectionIndex) =>
-        sectionIndex === index
-          ? {
-              ...section,
-              suggestedLayout: VALID_LAYOUTS.has(layoutValue) ? layoutValue : '',
-              layoutPinned: Boolean(layoutValue),
-            }
-          : section
+      sanitizeUnpinnedCollisions(
+        current.map((section, sectionIndex) =>
+          sectionIndex === index
+            ? {
+                ...section,
+                suggestedLayout: VALID_LAYOUTS.has(layoutValue) ? layoutValue : '',
+                layoutPinned: Boolean(layoutValue),
+              }
+            : section
+        )
       )
     );
     setDraftDirty(true);
@@ -162,13 +190,8 @@ export default function OutlinePage() {
     setSections((current) => {
       if (current.length >= 10) return current;
       const nextNumber = current.length + 1;
-      const adjusted = current.map((item, idx) =>
-        idx === current.length - 1 && !item.layoutPinned && item.suggestedLayout === 'summary'
-          ? { ...item, suggestedLayout: '' }
-          : item
-      );
-      return [
-        ...adjusted,
+      return sanitizeUnpinnedCollisions([
+        ...current,
         {
           id: newId,
           title: `Section ${nextNumber}`,
@@ -177,7 +200,7 @@ export default function OutlinePage() {
           layoutPinned: false,
           order: nextNumber,
         },
-      ];
+      ]);
     });
     setHighlightedId(newId);
     setDraftDirty(true);
@@ -192,14 +215,7 @@ export default function OutlinePage() {
       const next = [...current];
       const [moved] = next.splice(index, 1);
       next.splice(targetIndex, 0, moved);
-      return next.map((item, idx) => {
-        let nextLayout = item.suggestedLayout;
-        if (!item.layoutPinned) {
-          if (nextLayout === 'title' && idx !== 0) nextLayout = '';
-          if (nextLayout === 'summary' && idx !== next.length - 1) nextLayout = '';
-        }
-        return { ...item, suggestedLayout: nextLayout, order: idx + 1 };
-      });
+      return sanitizeUnpinnedCollisions(next);
     });
     if (movedId) setHighlightedId(movedId);
     setDraftDirty(true);
@@ -209,9 +225,9 @@ export default function OutlinePage() {
     if (sections.length <= 1) return;
     setSections((current) => {
       if (current.length <= 1) return current;
-      return current
-        .filter((_, sectionIndex) => sectionIndex !== index)
-        .map((item, idx) => ({ ...item, order: idx + 1 }));
+      return sanitizeUnpinnedCollisions(
+        current.filter((_, sectionIndex) => sectionIndex !== index)
+      );
     });
     setDraftDirty(true);
   };

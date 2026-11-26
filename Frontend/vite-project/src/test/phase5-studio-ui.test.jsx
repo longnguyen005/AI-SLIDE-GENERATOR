@@ -36,10 +36,14 @@ describe('Phase 5 Studio & Showcase UI: Outline Layout Selector, Scoped Regenera
     expect(await screen.findByRole('heading', { name: /outline editor/i })).toBeInTheDocument();
 
     const section2LayoutSelect = screen.getByLabelText('Target layout for section 2');
+    const section3LayoutSelect = screen.getByLabelText('Target layout for section 3');
     expect(section2LayoutSelect).toHaveValue('callout');
+    expect(section3LayoutSelect).toHaveValue('metrics');
 
+    // Selecting 'metrics' on Section 2 clears unpinned Section 3's colliding 'metrics' to Auto ('')
     fireEvent.change(section2LayoutSelect, { target: { value: 'metrics' } });
     expect(section2LayoutSelect).toHaveValue('metrics');
+    expect(section3LayoutSelect).toHaveValue('');
 
     // Trigger Generate Slides -> confirm dialog -> lands on PreviewPage
     fireEvent.click(screen.getAllByRole('button', { name: /generate slides/i })[0]);
@@ -47,10 +51,17 @@ describe('Phase 5 Studio & Showcase UI: Outline Layout Selector, Scoped Regenera
     fireEvent.click(within(confirmDialog).getByRole('button', { name: /generate slides/i }));
 
     expect(await screen.findByRole('heading', { name: /presentation preview/i })).toBeInTheDocument();
-    fireEvent.click(await screen.findByRole('button', { name: /^next$/i }));
+    const nextBtn = await screen.findByRole('button', { name: /^next$/i });
+    fireEvent.click(nextBtn);
 
     await waitFor(() => {
       expect(document.querySelector('.slide-canvas--metrics')).toBeInTheDocument();
+    });
+
+    // Slide 3 must NOT collide with Slide 2's 'metrics' layout
+    fireEvent.click(nextBtn);
+    await waitFor(() => {
+      expect(document.querySelector('.slide-canvas--metrics')).not.toBeInTheDocument();
     });
   });
 
@@ -136,6 +147,33 @@ describe('Phase 5 Studio & Showcase UI: Outline Layout Selector, Scoped Regenera
     await waitFor(() => {
       expect(document.querySelector('.slide-canvas--metrics')).toBeInTheDocument();
     });
+
+    // Typing an explicit conversion prompt in Custom instruction (without touching the checkbox) converts layout to timeline
+    fireEvent.click(screen.getByRole('button', { name: /regenerate with ai/i }));
+    const regenDialog3 = await screen.findByRole('dialog', { name: /regenerate this slide/i });
+    fireEvent.change(within(regenDialog3).getByLabelText(/custom instruction/i), {
+      target: { value: 'Convert into a 3-phase execution timeline for European launch' },
+    });
+    fireEvent.click(within(regenDialog3).getByRole('button', { name: /^regenerate$/i }));
+    await waitFor(() => {
+      expect(document.querySelector('.slide-canvas--timeline')).toBeInTheDocument();
+    });
+
+    // Selecting a layout preset and then unchecking 'Allow AI to switch...' unlocks checkbox and preserves timeline
+    fireEvent.click(screen.getByRole('button', { name: /regenerate with ai/i }));
+    const regenDialog4 = await screen.findByRole('dialog', { name: /regenerate this slide/i });
+    fireEvent.click(within(regenDialog4).getByRole('button', { name: /convert to kpi metrics/i }));
+    const layoutCheckbox = within(regenDialog4).getByLabelText(
+      /allow ai to switch to a better slide layout/i
+    );
+    expect(layoutCheckbox).toBeChecked();
+    fireEvent.click(layoutCheckbox);
+    expect(layoutCheckbox).not.toBeChecked();
+    fireEvent.click(within(regenDialog4).getByRole('button', { name: /^regenerate$/i }));
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: /regenerate this slide/i })).not.toBeInTheDocument();
+    });
+    expect(document.querySelector('.slide-canvas--timeline')).toBeInTheDocument();
   });
 
   it('renders 8 adaptive slide layouts on LandingPage and HeroShowcase', () => {

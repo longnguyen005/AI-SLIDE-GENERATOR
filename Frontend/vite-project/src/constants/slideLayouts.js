@@ -44,7 +44,7 @@ export function normalizeSlideLayout(value, fallback = 'content') {
 }
 
 const LEADING_METRIC_REGEX =
-  /^([+$<>~]?(?:\$)?\d[\d,.]*(?:\s*(?:mins|min|mos|ms|hrs|hr|days|wks|yrs|bps|MWh|GWh|seats|\$\/seat|\$\/mo|TB|GB|%|x|X|K|k|M|B|s|m|h))?(?=\b|%|\/|$)(?:\s+(?:Faster|Slower|Lower|Higher|Saved|ARR|MRR|Uptime|Accuracy|Growth|Margin|Reduction|ROI|NPS|Tagged|Availability|Contracted|SLA))?)\s*(?:[:\-–—]\s*|\s+)(.+)$/i;
+  /^([+$<>~]?(?:\$)?\d[\d,.]*(?:\s*(?:\/\s*seat|\/\s*mo|mins|min|mos|ms|hrs|hr|days|wks|yrs|bps|MWh|GWh|seats|TB|GB|%|x|X|K|k|M|B|s|m|h))?(?=\s|[:\-–—]|$)(?:\s+(?:Faster|Slower|Lower|Higher|Saved|ARR|MRR|Uptime|Accuracy|Growth|Margin|Reduction|ROI|NPS|Tagged|Availability|Contracted|SLA)(?=\s|[:\-–—]|$))?)\s*(?:[:\-–—]\s*|\s+)(.+)$/i;
 
 export function parseMetricBullet(rawText, index = 0) {
   const raw = String(rawText ?? '').trim();
@@ -59,7 +59,7 @@ export function parseMetricBullet(rawText, index = 0) {
     const right = raw.slice(pipeIdx + 1).trim();
     return {
       value: left || fallbackValue,
-      label: right || left || raw,
+      label: right || left || 'Operational benchmark indicator',
     };
   }
 
