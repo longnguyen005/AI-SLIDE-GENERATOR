@@ -36,6 +36,7 @@
 - **Resilient Gemini Orchestration:** Supports multi-key rotation (`GEMINI_API_KEYS`), fenced JSON extraction, per-slot retry, automatic model fallback (`gemini-2.0-flash,gemini-2.0-flash-lite,gemini-2.5-flash-lite`), and deterministic template generation when no API key is configured.
 - **Non-Destructive Slide Version Restore:** `SlideVersion` snapshots preserve `title`, `content`, `speakerNotes`, and `layout`. Restoring any historical version via `POST /api/slides/:slideId/versions/:versionId/restore` first snapshots the live slide so zero edits are lost.
 - **Production-Hardened Express API:** Helmet security headers, Zod schema validation on every write route, ObjectId route parameter guards, strict per-user deck ownership checks, `bcryptjs` + JWT auth with production `JWT_SECRET` enforcement, and dedicated rate limiters (`api`, `auth`, `ai`, and `export`).
+- **Open Design `linear-app` UI System (`Light / Dark`):** Semantic CSS custom-property token architecture (`src/styles/tokens.css`) powering an interactive 5-layout Hero Showcase, accessible Tone selector cards (`Professional`, `Academic`, `Simple`, `Persuasive`), inline Outline section editor (add, reorder, delete, and blank-title normalization), and monoline SVG iconography with zero external UI library bloat.
 - **Containerized & CI-Verified:** Multi-stage Docker builds with Nginx SPA routing + `/api/` reverse proxy (`docker-compose.yml`), verified on every push via GitHub Actions (Node 22 + MongoDB 7 service container + Vitest + ESLint + Vite production build).
 
 ---
@@ -44,7 +45,7 @@
 
 | Layer | Technologies |
 | :--- | :--- |
-| **Frontend** | React 19, Vite 8, React Router v7, `pptxgenjs` (offline demo export), Vitest + Testing Library |
+| **Frontend** | React 19, Vite 8, React Router v7, Open Design `linear-app` semantic CSS tokens (`Light / Dark`), `pptxgenjs` (offline demo export), Vitest + Testing Library |
 | **Backend** | Node.js 22 (ESM), Express 4, Zod 4, Helmet, `express-rate-limit`, Vitest + Supertest |
 | **Database & Auth** | MongoDB 7, Mongoose 8, Stateless JWT (`jsonwebtoken`), `bcryptjs` |
 | **AI & Export** | `@google/generative-ai` (Gemini API key rotation & fallback), `pptxgenjs` 5-layout `.pptx` builder |
@@ -74,10 +75,11 @@ AI-SLIDE-GENERATOR/
         ├── Dockerfile
         ├── nginx.conf          # SPA fallback + /api/ reverse proxy to backend:5000
         └── src/
-            ├── components/     # 5-layout SlideCanvas, RegenerateModal, SideBar, Topbar, etc.
-            ├── context/        # AuthContext (JWT + Instant Demo state management)
-            ├── pages/          # Landing, Auth, Dashboard, Create, Outline, Editor & Preview
+            ├── components/     # 5-layout SlideCanvas, HeroShowcase, RegenerateModal, SideBar, Topbar, etc.
+            ├── context/        # AuthContext (JWT + Instant Demo) & ThemeContext (Light / Dark persistence)
+            ├── pages/          # Landing, Auth, Dashboard, Create (Tone selector), Outline, Editor & Preview
             ├── service/        # apiClient, browser demoStore & clientPptxExport
+            ├── styles/         # Open Design linear-app semantic tokens (tokens.css)
             └── test/           # Vitest + React Testing Library UI & flow tests
 ```
 
