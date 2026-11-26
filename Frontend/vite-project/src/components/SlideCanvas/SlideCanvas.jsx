@@ -1,17 +1,14 @@
 import React from 'react';
 import Icon from '../Icon/Icon';
 import { normalizeDeckTheme } from '../../constants/deckThemes';
+import {
+  LAYOUT_LABELS,
+  VALID_LAYOUTS,
+  extractTwoColumnData,
+  parseMetricBullet,
+  parseTimelineBullet,
+} from '../../constants/slideLayouts';
 import './SlideCanvas.css';
-
-const VALID_LAYOUTS = new Set(['title', 'section', 'content', 'two_column', 'summary']);
-
-const LAYOUT_LABELS = {
-  title: 'Cover',
-  section: 'Section Break',
-  content: 'Key Insights',
-  two_column: 'Side-by-Side',
-  summary: 'Executive Summary',
-};
 
 function visualIcon(title = '') {
   const text = String(title).toLowerCase();
@@ -33,9 +30,11 @@ export default function SlideCanvas({ slide, direction = 0, theme }) {
   const icon = visualIcon(title);
   const directionAttr = direction > 0 ? 'forward' : direction < 0 ? 'backward' : 'neutral';
 
-  const midIndex = Math.max(1, Math.ceil(points.length / 2));
-  const leftColumnPoints = points.slice(0, midIndex);
-  const rightColumnPoints = points.slice(midIndex);
+  const twoColumn = layout === 'two_column' ? extractTwoColumnData(points) : null;
+  const metricCards = layout === 'metrics' ? points.slice(0, 4).map((p, idx) => parseMetricBullet(p, idx)) : [];
+  const timelineSteps = layout === 'timeline' ? points.slice(0, 4).map((p, idx) => parseTimelineBullet(p, idx)) : [];
+  const calloutLead = points[0] || 'Anchor execution on measurable strategic priorities.';
+  const calloutPillars = points.slice(1, 4);
 
   return (
     <section
@@ -144,7 +143,7 @@ export default function SlideCanvas({ slide, direction = 0, theme }) {
         </>
       )}
 
-      {layout === 'two_column' && (
+      {layout === 'two_column' && twoColumn && (
         <div className="slide-canvas__content slide-canvas__content--full">
           <span className="slide-canvas__eyebrow">
             {LAYOUT_LABELS.two_column} • Slide {slideNum}
@@ -152,10 +151,10 @@ export default function SlideCanvas({ slide, direction = 0, theme }) {
           <h2>{title}</h2>
           <div className="slide-canvas__columns">
             <div className="slide-canvas__column" style={{ '--item-index': 0 }}>
-              <strong className="slide-canvas__column-label">Column 01</strong>
-              {leftColumnPoints.length ? (
+              <strong className="slide-canvas__column-label">{twoColumn.leftHeader}</strong>
+              {twoColumn.leftItems.length ? (
                 <ul className="slide-canvas__points">
-                  {leftColumnPoints.map((point, index) => (
+                  {twoColumn.leftItems.map((point, index) => (
                     <li key={index} style={{ '--item-index': index + 1 }}>
                       <span>{String(index + 1).padStart(2, '0')}</span>
                       <p>{point}</p>
@@ -167,12 +166,12 @@ export default function SlideCanvas({ slide, direction = 0, theme }) {
               )}
             </div>
             <div className="slide-canvas__column slide-canvas__column--alt" style={{ '--item-index': 1 }}>
-              <strong className="slide-canvas__column-label">Column 02</strong>
-              {rightColumnPoints.length ? (
+              <strong className="slide-canvas__column-label">{twoColumn.rightHeader}</strong>
+              {twoColumn.rightItems.length ? (
                 <ul className="slide-canvas__points">
-                  {rightColumnPoints.map((point, index) => (
-                    <li key={index} style={{ '--item-index': midIndex + index + 1 }}>
-                      <span>{String(midIndex + index + 1).padStart(2, '0')}</span>
+                  {twoColumn.rightItems.map((point, index) => (
+                    <li key={index} style={{ '--item-index': twoColumn.midIndex + index + 1 }}>
+                      <span>{String(twoColumn.midIndex + index + 1).padStart(2, '0')}</span>
                       <p>{point}</p>
                     </li>
                   ))}
@@ -182,6 +181,103 @@ export default function SlideCanvas({ slide, direction = 0, theme }) {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {layout === 'metrics' && (
+        <div className="slide-canvas__content slide-canvas__content--full">
+          <span className="slide-canvas__eyebrow">
+            {LAYOUT_LABELS.metrics} • Slide {slideNum}
+          </span>
+          <h2>{title}</h2>
+          {metricCards.length ? (
+            <div
+              className="slide-canvas__metrics-grid"
+              data-count={metricCards.length}
+            >
+              {metricCards.map((metric, index) => (
+                <article
+                  key={index}
+                  className="slide-canvas__metric-card"
+                  style={{ '--item-index': index }}
+                >
+                  <span className="slide-canvas__metric-index">
+                    Signal {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <strong className="slide-canvas__metric-value">{metric.value}</strong>
+                  <p className="slide-canvas__metric-label">{metric.label}</p>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="slide-canvas__empty">No metric benchmarks added yet.</p>
+          )}
+        </div>
+      )}
+
+      {layout === 'timeline' && (
+        <div className="slide-canvas__content slide-canvas__content--full">
+          <span className="slide-canvas__eyebrow">
+            {LAYOUT_LABELS.timeline} • Slide {slideNum}
+          </span>
+          <h2>{title}</h2>
+          {timelineSteps.length ? (
+            <ol className="slide-canvas__timeline-track">
+              {timelineSteps.map((step, index) => (
+                <li
+                  key={index}
+                  className="slide-canvas__timeline-step"
+                  style={{ '--item-index': index }}
+                >
+                  <div className="slide-canvas__timeline-node">
+                    <span className="slide-canvas__timeline-num">
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                    <strong className="slide-canvas__timeline-stage">{step.stage}</strong>
+                  </div>
+                  <p className="slide-canvas__timeline-detail">{step.detail}</p>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="slide-canvas__empty">No roadmap milestones added yet.</p>
+          )}
+        </div>
+      )}
+
+      {layout === 'callout' && (
+        <div className="slide-canvas__content slide-canvas__content--full">
+          <span className="slide-canvas__eyebrow">
+            {LAYOUT_LABELS.callout} • Slide {slideNum}
+          </span>
+          <h2>{title}</h2>
+          {points.length ? (
+            <div className="slide-canvas__callout-stack">
+              <div className="slide-canvas__callout-hero" style={{ '--item-index': 0 }}>
+                <span className="slide-canvas__callout-tag">
+                  <Icon name={icon} size={15} />
+                  <span>Executive Thesis</span>
+                </span>
+                <p>{calloutLead}</p>
+              </div>
+              {calloutPillars.length > 0 && (
+                <ul className="slide-canvas__pillars-grid">
+                  {calloutPillars.map((pillar, index) => (
+                    <li
+                      key={index}
+                      className="slide-canvas__pillar-card"
+                      style={{ '--item-index': index + 1 }}
+                    >
+                      <small>Supporting Pillar {String(index + 1).padStart(2, '0')}</small>
+                      <p>{pillar}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ) : (
+            <p className="slide-canvas__empty">No slide content yet.</p>
+          )}
         </div>
       )}
 

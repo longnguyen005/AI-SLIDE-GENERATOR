@@ -1,9 +1,14 @@
+import { VALID_LAYOUTS } from '../constants/slideLayouts';
 import { exportDeckPptxClient } from './clientPptxExport';
+import {
+  buildSmartOutlineSections,
+  buildSmartSlidesFromOutline,
+  regenerateSmartDemoSlide,
+} from './smartDemoAi';
 
 export const DEMO_STORAGE_KEY = 'deckai_browser_demo_v1';
 export const DEMO_TOKEN = 'deckai-browser-demo-token';
 
-const VALID_LAYOUTS = new Set(['title', 'content', 'two_column', 'section', 'summary']);
 const VALID_THEMES = new Set(['indigo', 'emerald', 'amber', 'coral']);
 
 function normalizeDeckTheme(value) {
@@ -118,6 +123,7 @@ function createSeedWorkspace() {
             summary:
               'Quantify peak-tariff exposure and intermittency losses facing manufacturing campuses relying on solar and wind.',
             order: 1,
+            suggestedLayout: 'title',
           },
           {
             id: 'demo-outline-sec-2',
@@ -125,6 +131,7 @@ function createSeedWorkspace() {
             summary:
               'Explain how abundant earth-mineral chemistry eliminates thermal runaway risk and lithium supply volatility.',
             order: 2,
+            suggestedLayout: 'callout',
           },
           {
             id: 'demo-outline-sec-3',
@@ -132,6 +139,7 @@ function createSeedWorkspace() {
             summary:
               'Present signed multi-year energy-storage service agreements and 99.4% field availability from initial deployments.',
             order: 3,
+            suggestedLayout: 'metrics',
           },
           {
             id: 'demo-outline-sec-4',
@@ -139,6 +147,7 @@ function createSeedWorkspace() {
             summary:
               'Break down upfront installation recovery, 15-year dispatch optimization software fees, and domestic tax-credit tailwinds.',
             order: 4,
+            suggestedLayout: 'two_column',
           },
           {
             id: 'demo-outline-sec-5',
@@ -146,6 +155,7 @@ function createSeedWorkspace() {
             summary:
               'Detail 24-month milestones to reach 250 MWh annual capacity and unlock project-finance debt facilities.',
             order: 5,
+            suggestedLayout: 'timeline',
           },
         ],
       },
@@ -334,113 +344,6 @@ function findSlideOrThrow(state, slideId) {
   return slide;
 }
 
-function buildOutlineSections(topic, description, tone, slideCount) {
-  const count = Math.min(10, Math.max(1, Number(slideCount) || 5));
-  const cleanTopic = String(topic || 'Strategic Initiative').trim();
-  const contextLine = description
-    ? ` Ground the narrative in: ${String(description).trim().slice(0, 120)}.`
-    : '';
-
-  const blueprints = [
-    {
-      title: `Executive Mandate: Why ${cleanTopic} Matters Now`,
-      summary: `Frame the strategic opportunity, market urgency, and measurable outcomes expected from ${cleanTopic}.${contextLine}`,
-    },
-    {
-      title: `Baseline Bottlenecks and Operational Friction`,
-      summary: `Diagnose current workflow constraints, cost drivers, and risk exposure with a ${tone || 'professional'} lens.`,
-    },
-    {
-      title: `Core Architecture and High-Impact Capabilities`,
-      summary: `Detail how modern execution patterns unlock repeatable velocity and clearer decision-making across ${cleanTopic}.`,
-    },
-    {
-      title: ` Execution Tradeoffs vs. Governance Guardrails`,
-      summary: `Compare speed enablers against reliability, compliance, and quality controls required at scale.`,
-    },
-    {
-      title: `Measured Impact Signals and Benchmark Targets`,
-      summary: `Define leading KPIs, unit-economics improvements, and validation checkpoints for stakeholders.`,
-    },
-    {
-      title: `Phased Rollout Plan and Ownership Model`,
-      summary: `Outline 30-60-90 day milestones, cross-functional responsibilities, and dependency management.`,
-    },
-    {
-      title: `Risk Mitigation and Contingency Playbook`,
-      summary: `Identify top operational risks and establish proactive triggers before scaling adoption.`,
-    },
-    {
-      title: `Resource Allocation and Budget Framework`,
-      summary: `Align investment tiers with milestone gates so capital scales alongside proven ROI.`,
-    },
-    {
-      title: `Stakeholder Alignment and Change Enablement`,
-      summary: `Equip teams with clear playbooks, training loops, and feedback channels for sustained adoption.`,
-    },
-    {
-      title: `Executive Summary and Immediate Next Actions`,
-      summary: `Consolidate the core recommendation and confirm concrete decisions required this quarter.`,
-    },
-  ];
-
-  if (count === 1) {
-    return [
-      {
-        id: makeId('sec'),
-        title: blueprints[0].title.trim(),
-        summary: blueprints[0].summary,
-        order: 1,
-      },
-    ];
-  }
-
-  const chosen = [blueprints[0], ...blueprints.slice(1, count - 1), blueprints[blueprints.length - 1]];
-  return chosen.map((entry, idx) => ({
-    id: makeId('sec'),
-    title: entry.title.trim(),
-    summary: entry.summary,
-    order: idx + 1,
-  }));
-}
-
-function chooseLayoutForIndex(index, total) {
-  if (index === 0) return 'title';
-  if (index === total - 1 && total > 1) return 'summary';
-  const middleLayouts = ['section', 'content', 'two_column'];
-  return middleLayouts[(index - 1) % middleLayouts.length];
-}
-
-function buildSlideFromSection(deck, section, index, total) {
-  const layout = chooseLayoutForIndex(index, total);
-  const topic = deck.topic || deck.title || 'this initiative';
-  const summaryPoint = section.summary || `Establish the primary strategic takeaway for ${section.title}.`;
-
-  const content =
-    layout === 'two_column'
-      ? [
-          `Execution Driver: Accelerate ${topic} workflows with standardized playbooks.`,
-          'Execution Driver: Shorten feedback loops using real-time telemetry and benchmarks.',
-          'Control Guardrail: Enforce role-scoped access, auditability, and quality thresholds.',
-          'Control Guardrail: Gate broader rollout on verified milestone scorecards.',
-        ]
-      : [
-          summaryPoint,
-          `Align cross-functional owners on measurable targets supporting ${topic}.`,
-          'Prioritize high-leverage milestones with clear accountability and review cadence.',
-        ];
-
-  return {
-    _id: makeId('slide'),
-    deckId: deck._id,
-    slideNumber: index + 1,
-    title: String(section.title || `Slide ${index + 1}`),
-    content,
-    speakerNotes: `Walk the audience through "${section.title}" using a ${deck.tone || 'professional'} tone, then bridge smoothly to the next decision point.`,
-    layout,
-  };
-}
-
 export const demoStore = {
   async me() {
     const state = requireWorkspace();
@@ -546,6 +449,9 @@ export const demoStore = {
               title: section.title,
               summary: section.summary || '',
               order: section.order || idx + 1,
+              ...(VALID_LAYOUTS.has(section.suggestedLayout)
+                ? { suggestedLayout: section.suggestedLayout }
+                : {}),
             }))
           : [],
       },
@@ -587,7 +493,13 @@ export const demoStore = {
   async generateOutline(deckId) {
     const state = requireWorkspace();
     const deck = findDeckOrThrow(state, deckId);
-    const sections = buildOutlineSections(deck.topic, deck.description, deck.tone, deck.slideCount);
+    const sections = buildSmartOutlineSections(
+      deck.topic,
+      deck.description,
+      deck.tone,
+      deck.slideCount,
+      makeId
+    );
     deck.title = deck.topic || deck.title;
     deck.outline = { sections };
     deck.status = 'outline_ready';
@@ -610,6 +522,9 @@ export const demoStore = {
       title: String(section.title || `Section ${index + 1}`),
       summary: String(section.summary || ''),
       order: index + 1,
+      ...(VALID_LAYOUTS.has(section.suggestedLayout)
+        ? { suggestedLayout: section.suggestedLayout }
+        : {}),
     }));
     deck.outline = { sections: normalized };
     deck.slideCount = normalized.length;
@@ -637,8 +552,8 @@ export const demoStore = {
     state.versions = state.versions.filter((ver) => !oldSlideIds.has(ver.slideId));
 
     const now = new Date().toISOString();
-    const generated = sections.map((section, index) => ({
-      ...buildSlideFromSection(deck, section, index, sections.length),
+    const generated = buildSmartSlidesFromOutline(deck, sections, makeId).map((slide) => ({
+      ...slide,
       createdAt: now,
       updatedAt: now,
     }));
@@ -816,11 +731,33 @@ export const demoStore = {
     return { slides: updated };
   },
 
-  async regenerateSlide(slideId, instruction = '') {
+  async regenerateSlide(slideId, payloadOrInstruction = '') {
     const state = requireWorkspace();
     const slide = findSlideOrThrow(state, slideId);
     const deck = findDeckOrThrow(state, slide.deckId);
     const now = new Date().toISOString();
+
+    const options =
+      typeof payloadOrInstruction === 'string'
+        ? { instruction: payloadOrInstruction }
+        : payloadOrInstruction && typeof payloadOrInstruction === 'object'
+          ? payloadOrInstruction
+          : {};
+
+    const target = ['full', 'bullets', 'notes'].includes(options.target) ? options.target : 'full';
+    const instruction = String(options.instruction || '').trim();
+    const fallbackReason = options.preferredLayout
+      ? `Convert slide layout to ${options.preferredLayout}`
+      : target === 'notes'
+        ? 'AI speaker notes rewrite'
+        : target === 'bullets'
+          ? 'AI bullet points rewrite'
+          : 'AI regeneration';
+
+    const deckSlides = state.slides
+      .filter((item) => item.deckId === deck._id)
+      .sort((a, b) => a.slideNumber - b.slideNumber);
+    const slideIndex = deckSlides.findIndex((item) => item._id === slide._id);
 
     const slideVersions = state.versions.filter((ver) => ver.slideId === slideId);
     const nextVersionNumber =
@@ -834,21 +771,25 @@ export const demoStore = {
       speakerNotes: slide.speakerNotes,
       layout: slide.layout,
       versionNumber: nextVersionNumber,
-      reason: String(instruction || 'AI regeneration'),
+      reason: instruction || fallbackReason,
       createdAt: now,
     });
 
-    const cleanPrompt = String(instruction || 'Sharpen executive clarity').trim();
-    const baseBullets = slide.content.length
-      ? slide.content.slice(0, 3)
-      : [`Deliver measurable impact across ${deck.topic || 'core workflows'}.`];
+    const regenerated = regenerateSmartDemoSlide({
+      deck,
+      currentSlide: slide,
+      previousTitle: deckSlides[slideIndex - 1]?.title,
+      nextTitle: deckSlides[slideIndex + 1]?.title,
+      instruction,
+      target,
+      allowLayoutChange: options.allowLayoutChange,
+      preferredLayout: options.preferredLayout,
+    });
 
-    slide.title = `${slide.title.replace(/\s*\(Refined\)$/i, '')} (Refined)`;
-    slide.content = [
-      ...baseBullets,
-      `Focus angle: ${cleanPrompt}.`,
-    ].slice(0, 5);
-    slide.speakerNotes = `${slide.speakerNotes ? `${slide.speakerNotes} ` : ''}Refined for: ${cleanPrompt}.`.trim();
+    slide.title = regenerated.title;
+    slide.content = regenerated.content;
+    slide.speakerNotes = regenerated.speakerNotes;
+    slide.layout = regenerated.layout;
     slide.updatedAt = now;
     deck.updatedAt = now;
 

@@ -1,3 +1,9 @@
+import {
+  extractSharedColumnHeaders,
+  parseMetricBullet,
+  parseTimelineBullet,
+} from '../constants/slideLayouts';
+
 const SLIDE_W = 13.333;
 const SLIDE_H = 7.5;
 const PPTX_MIME = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
@@ -574,18 +580,19 @@ function renderTwoColumnSlide(shapes, slide, slideData, content, index, palette)
   const midpoint = Math.max(1, Math.ceil(content.length / 2));
   const leftItems = content.slice(0, midpoint);
   const rightItems = content.slice(midpoint);
+  const { leftHeader, rightHeader } = extractSharedColumnHeaders(leftItems, rightItems);
 
   const columns = [
     {
       x: 0.72,
-      header: 'COLUMN 01 • PRIMARY PERSPECTIVE',
+      header: leftHeader,
       accent: palette.primary,
       tint: palette.primaryTint,
       items: leftItems,
     },
     {
       x: 6.86,
-      header: 'COLUMN 02 • COUNTERPART & GUARDRAILS',
+      header: rightHeader,
       accent: palette.secondary,
       tint: palette.secondaryTint,
       items: rightItems,
@@ -761,6 +768,327 @@ function renderSummarySlide(shapes, slide, slideData, content, index, palette) {
   addFooter(slide, index, false);
 }
 
+function renderMetricsSlide(shapes, slide, slideData, content, index, palette) {
+  addLightCanvas(shapes, slide, palette);
+
+  slide.addText('KPI METRICS SCORECARD', {
+    x: 0.75,
+    y: 0.78,
+    w: 2.5,
+    h: 0.26,
+    fontSize: 8.5,
+    bold: true,
+    color: palette.primaryDark,
+    fill: { color: palette.primaryBadgeBg },
+    align: 'center',
+    valign: 'middle',
+    margin: 0.04,
+  });
+
+  slide.addText(String(slideData.title || 'Key Performance Metrics'), {
+    x: 0.75,
+    y: 1.18,
+    w: 11.8,
+    h: 0.96,
+    fontSize: 27,
+    bold: true,
+    color: '0F172A',
+    valign: 'top',
+    fit: 'shrink',
+    breakLine: true,
+    margin: 0.02,
+  });
+
+  const items = (content.length ? content : ['KPI 01 | Operational benchmark indicator']).slice(0, 4);
+  const cols = items.length === 3 ? 3 : 2;
+  const cardGap = 0.28;
+  const totalW = 11.8;
+  const cardW = (totalW - cardGap * (cols - 1)) / cols;
+  const rows = Math.ceil(items.length / cols);
+  const cardH = rows === 1 ? 3.8 : 2.05;
+
+  items.forEach((raw, idx) => {
+    const parsed = parseMetricBullet(raw, idx);
+    const col = idx % cols;
+    const row = Math.floor(idx / cols);
+    const x = 0.75 + col * (cardW + cardGap);
+    const y = 2.38 + row * (cardH + 0.26);
+
+    slide.addShape(shapes.roundRect, {
+      x,
+      y,
+      w: cardW,
+      h: cardH,
+      rectRadius: 0.08,
+      fill: { color: 'FFFFFF' },
+      line: { color: 'CBD5E1' },
+      shadow: { type: 'outer', color: '0F172A', opacity: 0.05, blur: 2, angle: 45, distance: 1 },
+    });
+
+    slide.addShape(shapes.rect, {
+      x,
+      y,
+      w: cardW,
+      h: 0.08,
+      fill: { color: idx % 2 === 0 ? palette.primary : palette.secondary },
+      line: { color: idx % 2 === 0 ? palette.primary : palette.secondary, transparency: 100 },
+    });
+
+    slide.addText(String(parsed.value), {
+      x: x + 0.28,
+      y: y + 0.28,
+      w: cardW - 0.56,
+      h: 0.72,
+      fontSize: 28,
+      bold: true,
+      color: idx % 2 === 0 ? palette.primaryDark : palette.secondaryDark,
+      valign: 'middle',
+      fit: 'shrink',
+      margin: 0,
+    });
+
+    slide.addText(String(parsed.label), {
+      x: x + 0.28,
+      y: y + 1.08,
+      w: cardW - 0.56,
+      h: cardH - 1.28,
+      fontSize: 13.5,
+      color: '334155',
+      valign: 'top',
+      fit: 'shrink',
+      breakLine: true,
+      margin: 0.02,
+    });
+  });
+
+  addFooter(slide, index, false);
+}
+
+function renderTimelineSlide(shapes, slide, slideData, content, index, palette) {
+  addLightCanvas(shapes, slide, palette);
+
+  slide.addText('EXECUTION ROADMAP & MILESTONES', {
+    x: 0.75,
+    y: 0.78,
+    w: 3.1,
+    h: 0.26,
+    fontSize: 8.5,
+    bold: true,
+    color: palette.primaryDark,
+    fill: { color: palette.primaryBadgeBg },
+    align: 'center',
+    valign: 'middle',
+    margin: 0.04,
+  });
+
+  slide.addText(String(slideData.title || 'Phased Implementation Roadmap'), {
+    x: 0.75,
+    y: 1.18,
+    w: 11.8,
+    h: 0.96,
+    fontSize: 27,
+    bold: true,
+    color: '0F172A',
+    valign: 'top',
+    fit: 'shrink',
+    breakLine: true,
+    margin: 0.02,
+  });
+
+  const items = (content.length ? content : ['Phase 1: Baseline scope and launch pilot']).slice(0, 4);
+  const count = items.length;
+  const gap = 0.24;
+  const cardW = (11.8 - gap * Math.max(0, count - 1)) / count;
+
+  slide.addShape(shapes.rect, {
+    x: 0.95,
+    y: 2.62,
+    w: 11.4,
+    h: 0.05,
+    fill: { color: palette.primaryLight },
+    line: { color: palette.primaryLight, transparency: 100 },
+  });
+
+  items.forEach((raw, idx) => {
+    const parsed = parseTimelineBullet(raw, idx);
+    const x = 0.75 + idx * (cardW + gap);
+
+    slide.addShape(shapes.roundRect, {
+      x,
+      y: 2.42,
+      w: 0.46,
+      h: 0.42,
+      rectRadius: 0.06,
+      fill: { color: palette.primary },
+      line: { color: palette.primary, transparency: 100 },
+    });
+
+    slide.addText(String(idx + 1).padStart(2, '0'), {
+      x,
+      y: 2.42,
+      w: 0.46,
+      h: 0.42,
+      fontSize: 10,
+      bold: true,
+      color: 'FFFFFF',
+      align: 'center',
+      valign: 'middle',
+      margin: 0,
+    });
+
+    slide.addShape(shapes.roundRect, {
+      x,
+      y: 3.04,
+      w: cardW,
+      h: 3.68,
+      rectRadius: 0.08,
+      fill: { color: 'FFFFFF' },
+      line: { color: 'CBD5E1' },
+      shadow: { type: 'outer', color: '0F172A', opacity: 0.05, blur: 2, angle: 45, distance: 1 },
+    });
+
+    slide.addText(String(parsed.stage), {
+      x: x + 0.2,
+      y: 3.24,
+      w: cardW - 0.4,
+      h: 0.46,
+      fontSize: 11,
+      bold: true,
+      color: palette.primaryDark,
+      valign: 'middle',
+      fit: 'shrink',
+      margin: 0,
+    });
+
+    slide.addText(String(parsed.detail), {
+      x: x + 0.2,
+      y: 3.8,
+      w: cardW - 0.4,
+      h: 2.7,
+      fontSize: 13,
+      color: '334155',
+      valign: 'top',
+      fit: 'shrink',
+      breakLine: true,
+      margin: 0.02,
+    });
+  });
+
+  addFooter(slide, index, false);
+}
+
+function renderCalloutSlide(shapes, slide, slideData, content, index, palette) {
+  addLightCanvas(shapes, slide, palette);
+
+  slide.addText('EXECUTIVE THESIS SPOTLIGHT', {
+    x: 0.75,
+    y: 0.78,
+    w: 2.9,
+    h: 0.26,
+    fontSize: 8.5,
+    bold: true,
+    color: palette.primaryDark,
+    fill: { color: palette.primaryBadgeBg },
+    align: 'center',
+    valign: 'middle',
+    margin: 0.04,
+  });
+
+  slide.addText(String(slideData.title || 'Core Strategic Thesis'), {
+    x: 0.75,
+    y: 1.18,
+    w: 11.8,
+    h: 0.92,
+    fontSize: 27,
+    bold: true,
+    color: '0F172A',
+    valign: 'top',
+    fit: 'shrink',
+    breakLine: true,
+    margin: 0.02,
+  });
+
+  const lead = content[0] || slideData.title || 'Anchor execution on measurable high-leverage priorities.';
+  const pillars = content.slice(1, 4);
+
+  slide.addShape(shapes.roundRect, {
+    x: 0.75,
+    y: 2.28,
+    w: 11.8,
+    h: pillars.length ? 1.88 : 3.9,
+    rectRadius: 0.08,
+    fill: { color: palette.primaryTint },
+    line: { color: palette.sectionCardBorder },
+  });
+
+  slide.addShape(shapes.rect, {
+    x: 0.75,
+    y: 2.28,
+    w: 0.14,
+    h: pillars.length ? 1.88 : 3.9,
+    fill: { color: palette.primary },
+    line: { color: palette.primary, transparency: 100 },
+  });
+
+  slide.addText(String(lead), {
+    x: 1.12,
+    y: 2.48,
+    w: 11.15,
+    h: pillars.length ? 1.48 : 3.4,
+    fontSize: 19,
+    bold: true,
+    color: '0F172A',
+    valign: 'middle',
+    fit: 'shrink',
+    breakLine: true,
+    margin: 0.02,
+  });
+
+  if (pillars.length > 0) {
+    const gap = 0.26;
+    const cardW = (11.8 - gap * Math.max(0, pillars.length - 1)) / pillars.length;
+    pillars.forEach((pillar, idx) => {
+      const x = 0.75 + idx * (cardW + gap);
+      slide.addShape(shapes.roundRect, {
+        x,
+        y: 4.42,
+        w: cardW,
+        h: 2.32,
+        rectRadius: 0.08,
+        fill: { color: 'FFFFFF' },
+        line: { color: 'CBD5E1' },
+      });
+
+      slide.addText(`PILLAR 0${idx + 1}`, {
+        x: x + 0.22,
+        y: 4.6,
+        w: cardW - 0.44,
+        h: 0.28,
+        fontSize: 8.5,
+        bold: true,
+        charSpace: 1,
+        color: palette.secondaryDark,
+        margin: 0,
+      });
+
+      slide.addText(String(pillar), {
+        x: x + 0.22,
+        y: 4.96,
+        w: cardW - 0.44,
+        h: 1.58,
+        fontSize: 13,
+        color: '334155',
+        valign: 'top',
+        fit: 'shrink',
+        breakLine: true,
+        margin: 0.02,
+      });
+    });
+  }
+
+  addFooter(slide, index, false);
+}
+
 export async function exportDeckPptxClient(deck = {}, slides = []) {
   if (!Array.isArray(slides) || slides.length === 0) {
     throw new Error('Deck has no slides to export');
@@ -797,6 +1125,15 @@ export async function exportDeckPptxClient(deck = {}, slides = []) {
         break;
       case 'two_column':
         renderTwoColumnSlide(shapes, slide, slideData, content, index, palette);
+        break;
+      case 'metrics':
+        renderMetricsSlide(shapes, slide, slideData, content, index, palette);
+        break;
+      case 'timeline':
+        renderTimelineSlide(shapes, slide, slideData, content, index, palette);
+        break;
+      case 'callout':
+        renderCalloutSlide(shapes, slide, slideData, content, index, palette);
         break;
       case 'summary':
         renderSummarySlide(shapes, slide, slideData, content, index, palette);

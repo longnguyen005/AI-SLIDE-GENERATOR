@@ -326,17 +326,24 @@ export const api = {
           body: JSON.stringify(data),
         }),
 
-  regenerateSlide: (slideId, instruction) =>
-    isBrowserDemoActive()
-      ? demoStore.regenerateSlide(slideId, instruction)
+  regenerateSlide: (slideId, payloadOrInstruction) => {
+    const body =
+      typeof payloadOrInstruction === 'string'
+        ? { instruction: payloadOrInstruction }
+        : payloadOrInstruction && typeof payloadOrInstruction === 'object'
+          ? payloadOrInstruction
+          : {};
+    return isBrowserDemoActive()
+      ? demoStore.regenerateSlide(slideId, body)
       : request(
           `/slides/${slideId}/regenerate`,
           {
             method: 'POST',
-            body: JSON.stringify({ instruction }),
+            body: JSON.stringify(body),
           },
           AI_TIMEOUT_MS
-        ),
+        );
+  },
 
   getSlideVersions: (slideId) =>
     isBrowserDemoActive()

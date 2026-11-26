@@ -377,7 +377,240 @@
   color: var(--surface);
 }
 
-/* ─── 5. Executive Summary Layout ────────────────────────────────────────── */
+/* ─── 5. KPI Metrics Scorecard Layout ────────────────────────────────────── */
+.slide-canvas--metrics {
+  grid-template-columns: 1fr;
+}
+
+.slide-canvas__metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.slide-canvas__metrics-grid[data-count="3"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.slide-canvas__metrics-grid[data-count="1"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.slide-canvas__metric-card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 20px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+
+.slide-canvas__metric-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  background: var(--accent);
+}
+
+.slide-canvas__metric-card:first-child {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+}
+
+.slide-canvas__metric-index {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.slide-canvas__metric-value {
+  color: var(--accent-text);
+  font-family: var(--font-display);
+  font-size: clamp(24px, 2.5vw, 36px);
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: var(--tracking-display);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.slide-canvas__metric-label {
+  margin: 0;
+  color: var(--fg-2);
+  font-size: clamp(13px, 1.1vw, 15px);
+  line-height: 1.46;
+  overflow-wrap: anywhere;
+}
+
+/* ─── 6. Roadmap Timeline Stepper Layout ─────────────────────────────────── */
+.slide-canvas--timeline {
+  grid-template-columns: 1fr;
+}
+
+.slide-canvas__timeline-track {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(195px, 1fr));
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.slide-canvas__timeline-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 18px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+
+.slide-canvas__timeline-node {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.slide-canvas__timeline-num {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--accent-on);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.slide-canvas__timeline-stage {
+  color: var(--accent-text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.slide-canvas__timeline-detail {
+  margin: 0;
+  color: var(--fg-2);
+  font-size: 14px;
+  line-height: 1.48;
+  overflow-wrap: anywhere;
+}
+
+/* ─── 7. Executive Thesis Callout Layout ─────────────────────────────────── */
+.slide-canvas--callout {
+  grid-template-columns: 1fr;
+}
+
+.slide-canvas__callout-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.slide-canvas__callout-hero {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 22px 20px 26px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--accent-border);
+  background: var(--accent-soft);
+}
+
+.slide-canvas__callout-hero::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background: var(--accent);
+}
+
+.slide-canvas__callout-tag {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent-text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.slide-canvas__callout-hero p {
+  margin: 0;
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-size: clamp(17px, 1.55vw, 22px);
+  font-weight: 600;
+  line-height: 1.38;
+  letter-spacing: -0.014em;
+  overflow-wrap: anywhere;
+}
+
+.slide-canvas__pillars-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.slide-canvas__pillar-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+
+.slide-canvas__pillar-card small {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.slide-canvas__pillar-card p {
+  margin: 0;
+  color: var(--fg-2);
+  font-size: 14px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+/* ─── 8. Executive Summary Layout ────────────────────────────────────────── */
 .slide-canvas--summary {
   grid-template-columns: 1fr;
 }
@@ -443,10 +676,14 @@
 /* ─── Dark Mode Surface Luminance Stepping ───────────────────────────────── */
 :root[data-theme="dark"] .slide-canvas__hero-lead,
 :root[data-theme="dark"] .slide-canvas__points li,
+:root[data-theme="dark"] .slide-canvas__metric-card,
+:root[data-theme="dark"] .slide-canvas__timeline-step,
+:root[data-theme="dark"] .slide-canvas__pillar-card,
 :root[data-theme="dark"] .slide-canvas__summary-card {
   background: var(--surface-elevated);
 }
 
+:root[data-theme="dark"] .slide-canvas__metric-card:first-child,
 :root[data-theme="dark"] .slide-canvas__summary-card:first-child {
   border-color: var(--accent-border);
   background: var(--accent-soft);
@@ -468,6 +705,10 @@
 .slide-canvas__hero-lead,
 .slide-canvas__points li,
 .slide-canvas__column,
+.slide-canvas__metric-card,
+.slide-canvas__timeline-step,
+.slide-canvas__callout-hero,
+.slide-canvas__pillar-card,
 .slide-canvas__summary-card {
   animation: deckai-item-cascade 260ms var(--ease-out) backwards;
   animation-delay: calc(var(--item-index, 0) * 35ms);
@@ -484,9 +725,30 @@
   .slide-canvas__hero-lead,
   .slide-canvas__points li,
   .slide-canvas__column,
+  .slide-canvas__metric-card,
+  .slide-canvas__timeline-step,
+  .slide-canvas__callout-hero,
+  .slide-canvas__pillar-card,
   .slide-canvas__summary-card,
   .slide-canvas__visual-icon {
     animation: none !important;
+  }
+}
+
+@media print {
+  .slide-canvas,
+  .slide-canvas__hero-lead,
+  .slide-canvas__points li,
+  .slide-canvas__column,
+  .slide-canvas__metric-card,
+  .slide-canvas__timeline-step,
+  .slide-canvas__callout-hero,
+  .slide-canvas__pillar-card,
+  .slide-canvas__summary-card,
+  .slide-canvas__visual-icon {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
 }
 
@@ -517,7 +779,11 @@
     padding: 28px 20px 36px;
   }
 
-  .slide-canvas__columns {
+  .slide-canvas__columns,
+  .slide-canvas__metrics-grid,
+  .slide-canvas__metrics-grid[data-count="3"],
+  .slide-canvas__timeline-track,
+  .slide-canvas__pillars-grid {
     grid-template-columns: 1fr;
   }
 }
