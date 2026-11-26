@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import zlib from 'node:zlib';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { api } from '../service/apiClient';

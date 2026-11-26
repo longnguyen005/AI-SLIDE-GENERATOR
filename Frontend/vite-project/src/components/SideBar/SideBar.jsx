@@ -189,24 +189,25 @@ export default function Sidebar() {
                 <ul className="sidebar-tips-list">
                   <li className="sidebar-tips-item">
                     <div>
-                      <strong>Keyboard slide navigation</strong>
-                      <small>Use Left and Right Arrow keys in Presentation Preview to step through slides rapidly.</small>
+                      <strong>Keyboard slide &amp; presenter navigation</strong>
+                      <small>Use Arrow keys or Space to step through slides, press P for Presenter View, and press Ctrl+S in the Editor to save.</small>
                     </div>
                     <span className="sidebar-kbd-group">
                       <kbd>←</kbd>
                       <kbd>→</kbd>
+                      <kbd>P</kbd>
                     </span>
                   </li>
                   <li className="sidebar-tips-item">
                     <div>
-                      <strong>Targeted AI regeneration &amp; history</strong>
-                      <small>Refine any slide with custom prompts in the Editor, and restore prior snapshots from Version History.</small>
+                      <strong>4 deck themes, duplication &amp; version history</strong>
+                      <small>Switch brand palettes live on the canvas, duplicate decks or slides in one click, and restore snapshots anytime.</small>
                     </div>
                   </li>
                   <li className="sidebar-tips-item">
                     <div>
-                      <strong>Instant Demo &amp; PowerPoint export</strong>
-                      <small>Create outlines, switch across 5 slide layouts, and export real .pptx decks even offline in Browser Sandbox mode.</small>
+                      <strong>Instant Demo, PowerPoint &amp; PDF export</strong>
+                      <small>Export themed .pptx files or print 16:9 PDF handouts even offline in Instant Demo Browser Sandbox mode.</small>
                     </div>
                   </li>
                 </ul>

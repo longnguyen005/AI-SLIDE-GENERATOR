@@ -1,7 +1,7 @@
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import App from '../App';
 import SlideCanvas from '../components/SlideCanvas/SlideCanvas';
@@ -184,5 +184,127 @@ describe('Phase 4 Studio Power-Tools, Deck Themes & Dashboard Duplication', () =
     expect(
       await screen.findByText('Enterprise AI Copilots: 2026 Rollout Blueprint (Copy)')
     ).toBeInTheDocument();
+  });
+
+  it('supports Presenter View console (live timer, Up Next preview, teleprompter scale, and Space/P/N shortcuts) with deck theme forwarding', async () => {
+    await api.updateDeck('demo-deck-ready', { theme: 'emerald' });
+
+    const { container } = render(
+      <MemoryRouter initialEntries={['/preview/demo-deck-ready']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: /presentation preview/i })
+    ).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(container.querySelector('.slide-canvas')).toHaveAttribute(
+        'data-deck-theme',
+        'emerald'
+      );
+    });
+
+    vi.useFakeTimers();
+    try {
+      const presenterBtn = screen.getByRole('button', { name: /presenter view/i });
+      expect(presenterBtn).toHaveAttribute('aria-pressed', 'false');
+
+      // Guard: Space while focused on a button must NOT advance slides
+      presenterBtn.focus();
+      fireEvent.keyDown(presenterBtn, { key: ' ' });
+      expect(screen.getByText('1 / 5')).toBeInTheDocument();
+
+      // Open Presenter View
+      fireEvent.click(presenterBtn);
+      expect(presenterBtn).toHaveAttribute('aria-pressed', 'true');
+
+      const consoleRegion = screen.getByRole('region', { name: /presenter console/i });
+      expect(within(consoleRegion).getByText('00:00')).toBeInTheDocument();
+      expect(
+        within(consoleRegion).getByText(
+          'Phase 1: High-Impact Workflows and Baseline Bottlenecks'
+        )
+      ).toBeInTheDocument();
+
+      // Timer ticks forward when running, pauses, and resets cleanly
+      act(() => {
+        vi.advanceTimersByTime(3000);
+      });
+      expect(within(consoleRegion).getByText('00:03')).toBeInTheDocument();
+
+      fireEvent.click(within(consoleRegion).getByRole('button', { name: /pause timer/i }));
+      act(() => {
+        vi.advanceTimersByTime(4000);
+      });
+      expect(within(consoleRegion).getByText('00:03')).toBeInTheDocument();
+
+      fireEvent.click(within(consoleRegion).getByRole('button', { name: /reset timer/i }));
+      expect(within(consoleRegion).getByText('00:00')).toBeInTheDocument();
+
+      // Teleprompter large-text toggle
+      const largeNotesBtn = within(consoleRegion).getByRole('button', { name: /large notes/i });
+      expect(largeNotesBtn).toHaveAttribute('aria-pressed', 'false');
+      fireEvent.click(largeNotesBtn);
+      expect(largeNotesBtn).toHaveAttribute('aria-pressed', 'true');
+
+      // Space on document.body advances slides; final slide shows "End of presentation"
+      document.body.focus();
+      for (let step = 0; step < 4; step += 1) {
+        fireEvent.keyDown(window, { key: ' ' });
+      }
+      expect(screen.getByText('5 / 5')).toBeInTheDocument();
+      expect(within(consoleRegion).getByText(/end of presentation/i)).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('mounts all themed slides inside .preview-print-deck only during Print / PDF execution and cleans up afterward', async () => {
+    await api.updateDeck('demo-deck-ready', { theme: 'coral' });
+
+    let canvasesDuringPrint = 0;
+    let printThemeAttr = '';
+    const originalPrint = window.print;
+    window.print = vi.fn(() => {
+      const printDeck = document.querySelector('.preview-print-deck');
+      const printCanvases = printDeck ? printDeck.querySelectorAll('.slide-canvas') : [];
+      canvasesDuringPrint = printCanvases.length;
+      printThemeAttr = printCanvases[0]?.getAttribute('data-deck-theme') || '';
+    });
+
+    try {
+      const { container } = render(
+        <MemoryRouter initialEntries={['/preview/demo-deck-ready']}>
+          <App />
+        </MemoryRouter>
+      );
+
+      expect(
+        await screen.findByRole('heading', { name: /presentation preview/i })
+      ).toBeInTheDocument();
+      await waitFor(() => {
+        expect(container.querySelector('.slide-canvas')).toHaveAttribute(
+          'data-deck-theme',
+          'coral'
+        );
+      });
+
+      // Only 1 active SlideCanvas mounted during normal screen mode
+      expect(container.querySelectorAll('.slide-canvas')).toHaveLength(1);
+      expect(container.querySelector('.preview-print-deck')).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: /print \/ pdf/i }));
+      expect(window.print).toHaveBeenCalledTimes(1);
+      expect(canvasesDuringPrint).toBe(5);
+      expect(printThemeAttr).toBe('coral');
+
+      // Immediately unmounts print deck after window.print() returns
+      expect(container.querySelector('.preview-print-deck')).not.toBeInTheDocument();
+      expect(container.querySelectorAll('.slide-canvas')).toHaveLength(1);
+    } finally {
+      window.print = originalPrint;
+    }
   });
 });

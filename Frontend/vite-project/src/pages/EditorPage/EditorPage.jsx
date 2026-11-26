@@ -232,7 +232,10 @@ export default function EditorPage() {
   };
 
   const saveHandlerRef = useRef(handleSaveSlide);
-  saveHandlerRef.current = handleSaveSlide;
+
+  useEffect(() => {
+    saveHandlerRef.current = handleSaveSlide;
+  });
 
   useEffect(() => {
     const onKeyDown = (event) => {

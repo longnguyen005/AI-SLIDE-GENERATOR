@@ -22,9 +22,9 @@
 1. **Instant Demo Workspace:** Launch into pre-seeded sample decks in one click (`POST /api/auth/demo`) with an automatic <3.5s browser-local fallback when running frontend-only or during backend cold starts.
 2. **Prompt to Outline:** Describe your topic, audience, language, tone, and slide count to generate a structured presentation outline.
 3. **Review & Refine:** Reorder, edit, add, or remove outline sections before committing to slide generation.
-4. **Interactive 5-Layout Slide Canvas & AI Regeneration:** Edit titles, bullets, layouts (`title`, `section`, `content`, `two_column`, `summary`), and speaker notes directly on the canvas, or selectively regenerate individual slides with custom AI instructions.
-5. **Slide Version History & Restore:** Every AI regeneration and restore automatically snapshots the slide state so previous revisions can be inspected and restored non-destructively (`POST /api/slides/:slideId/versions/:versionId/restore`).
-6. **Native PowerPoint Export:** Download finished presentations as `.pptx` files with speaker notes and layout-specific geometry via `pptxgenjs` (both server-side and offline browser-demo export).
+4. **Interactive 5-Layout Slide Canvas, Brand Themes & AI Regeneration:** Edit titles, bullets, layouts (`title`, `section`, `content`, `two_column`, `summary`), speaker notes, and 4 presentation palettes (`Executive Indigo`, `Venture Emerald`, `Editorial Amber`, `Keynote Coral`) directly in the Studio, duplicate decks or slides in one click, or selectively regenerate individual slides with custom AI instructions.
+5. **Slide Version History & Restore:** Every AI regeneration and restore automatically snapshots the slide state so previous revisions can be inspected and restored non-destructively (`POST /api/slides/:slideId/versions/:versionId/restore`), alongside per-slide draft preservation across slide switches and `Ctrl/Cmd+S` shortcuts.
+6. **Presenter View, PDF Handout & Native PowerPoint Export:** Rehearse or present live in **Presenter View** (elapsed timer with pause/reset, "Up Next" slide card, teleprompter speaker notes, and keyboard controls), print clean 16:9 landscape PDF handouts, or download themed `.pptx` files via `pptxgenjs` (both server-side and offline browser-demo export).
 
 **Live Application:** [https://ai-slide-generator-omega.vercel.app](https://ai-slide-generator-omega.vercel.app)
 
@@ -158,11 +158,13 @@ Open [http://localhost:5173](http://localhost:5173) in your browser. (Optional: 
 | `GET /api/health` | Service & MongoDB connection health check |
 | `POST /api/auth/register` / `POST /api/auth/login` | Account registration & JWT sign-in |
 | `POST /api/auth/demo` | Instant Demo login with idempotent sample deck seeding |
-| `GET /api/decks` / `POST /api/decks` | List user decks or create a new draft presentation |
+| `GET /api/decks` / `POST /api/decks` | List user decks or create a new draft presentation (with `tone` and `theme`) |
+| `POST /api/decks/:deckId/duplicate` | Clone an existing presentation, its outline, theme, and ordered slides |
 | `POST /api/decks/:deckId/outline/generate` | Generate structured presentation outline |
 | `PUT /api/decks/:deckId/outline` | Save edited & reordered outline sections |
 | `POST /api/decks/:deckId/slides/generate` | Generate (or re-generate) deck slides across 5 layouts |
 | `PATCH /api/decks/:deckId/slides/reorder` | Full-permutation slide reordering |
+| `POST /api/slides/:slideId/duplicate` | Duplicate a slide in-place and renumber the deck (`<= 10` slides) |
 | `POST /api/slides/:slideId/regenerate` | AI-regenerate a single slide and snapshot prior version |
 | `GET /api/slides/:slideId/versions` | List saved historical snapshots for a slide |
 | `POST /api/slides/:slideId/versions/:versionId/restore` | Snapshot current slide and restore a prior version |
