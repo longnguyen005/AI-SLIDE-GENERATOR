@@ -349,9 +349,12 @@ export default function EditorPage() {
   const saveHandlerRef = useRef(handleSaveSlide);
   const commitRenameRef = useRef(commitRenameDeck);
 
+  const hasUnsavedRef = useRef(hasAnyUnsavedDraft);
+
   useEffect(() => {
     saveHandlerRef.current = handleSaveSlide;
     commitRenameRef.current = commitRenameDeck;
+    hasUnsavedRef.current = hasAnyUnsavedDraft;
   });
 
   useEffect(() => {
@@ -361,6 +364,7 @@ export default function EditorPage() {
         event.preventDefault();
         if (isRenamingDeck) {
           commitRenameRef.current?.();
+          if (!hasUnsavedRef.current) return;
         }
         saveHandlerRef.current?.();
       }

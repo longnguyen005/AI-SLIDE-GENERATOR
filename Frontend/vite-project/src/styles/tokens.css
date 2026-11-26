@@ -280,6 +280,8 @@
     --accent-border:    rgba(94, 106, 210, 0.28);
     --accent-text:      #4752c4;
     --deck-visual-glow: rgba(94, 106, 210, 0.28);
+    --success-soft:     rgba(39, 166, 68, 0.10);
+    --success-text:     #1d7d33;
   }
 
   :root[data-theme="dark"] [data-deck-theme="emerald"] {

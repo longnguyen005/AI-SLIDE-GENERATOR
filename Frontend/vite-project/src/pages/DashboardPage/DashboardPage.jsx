@@ -81,7 +81,14 @@ export default function DashboardPage() {
       if (statusFilter === 'ready' && deck.status !== 'ready') return false;
       if (statusFilter === 'draft' && deck.status === 'ready') return false;
       if (!query) return true;
-      const haystack = [deck.title, deck.topic, deck.description, deck.tone, deck.status]
+      const haystack = [
+        deck.title,
+        deck.topic,
+        deck.description,
+        deck.tone,
+        deck.theme,
+        deck.status,
+      ]
         .filter(Boolean)
         .join(' ')
         .toLowerCase();
