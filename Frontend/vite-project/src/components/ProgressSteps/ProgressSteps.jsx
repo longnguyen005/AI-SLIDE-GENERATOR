@@ -5,9 +5,10 @@ import './ProgressSteps.css';
 const steps = ['Topic', 'Outline', 'Slides', 'Export'];
 
 export default function ProgressSteps({ active = 2 }) {
+  const ratio = Math.max(0, Math.min(1, (active - 1) / (steps.length - 1)));
   return (
     <div className="progress-steps">
-      <div className="progress-steps__line"><span style={{ width: `${((active - 1) / (steps.length - 1)) * 100}%` }} /></div>
+      <div className="progress-steps__line"><span style={{ transform: `scaleX(${ratio})` }} /></div>
       {steps.map((step, index) => {
         const position = index + 1;
         const complete = position < active;

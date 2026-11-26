@@ -155,7 +155,7 @@ export default function RegisterPage() {
                 </button>
               </div>
               <div className="password-strength" aria-hidden="true">
-                <span style={{ width: `${passwordStrength}%` }} />
+                <span style={{ transform: `scaleX(${passwordStrength / 100})` }} />
               </div>
               <small className="password-hint">
                 Use 8+ characters with a mix of letters and numbers.

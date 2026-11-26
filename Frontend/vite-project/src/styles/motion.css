@@ -13,7 +13,7 @@
   }
   to {
     opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
+    transform: none;
   }
 }
 
@@ -24,7 +24,7 @@
   }
   to {
     opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
+    transform: none;
   }
 }
 
@@ -45,8 +45,8 @@
   }
   to {
     opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-    filter: blur(0);
+    transform: none;
+    filter: none;
   }
 }
 
@@ -58,8 +58,8 @@
   }
   to {
     opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-    filter: blur(0);
+    transform: none;
+    filter: none;
   }
 }
 
@@ -70,7 +70,7 @@
   }
   to {
     opacity: 1;
-    transform: translate3d(0, 0, 0);
+    transform: none;
   }
 }
 
@@ -109,7 +109,7 @@
   }
   to {
     opacity: 1;
-    transform: translate3d(0, 0, 0);
+    transform: none;
   }
 }
 
@@ -120,7 +120,7 @@
   }
   to {
     opacity: 1;
-    transform: translate3d(0, 0, 0);
+    transform: none;
   }
 }
 
@@ -148,9 +148,12 @@
 /* ─── Workspace Surface Entrances & Modals ───────────────────────────────── */
 .page-content,
 .create-main,
-.outline-main,
 .editor-workspace {
   animation: deckai-rise-in var(--motion-base) var(--ease-out) both;
+}
+
+.outline-main {
+  animation: deckai-fade-in var(--motion-base) var(--ease-out) both;
 }
 
 .sidebar-popup-backdrop,
@@ -165,7 +168,7 @@
 }
 
 /* ─── Scroll-Triggered Reveal Choreography ───────────────────────────────── */
-[data-reveal] {
+[data-reveal]:not([data-reveal-done="true"]) {
   opacity: 0;
   transform: translate3d(0, 18px, 0);
   transition:
@@ -175,13 +178,13 @@
   will-change: opacity, transform;
 }
 
-[data-reveal][data-visible="true"] {
+[data-reveal]:not([data-reveal-done="true"])[data-visible="true"] {
   opacity: 1;
-  transform: translate3d(0, 0, 0);
+  transform: none;
 }
 
 /* ─── Shared Sliding Pill Indicator ──────────────────────────────────────── */
-.sliding-pill-indicator {
+:where(.sliding-pill-indicator) {
   position: absolute;
   top: 0;
   left: 0;
@@ -209,7 +212,7 @@
   }
 
   html {
-    scroll-behavior: auto;
+    scroll-behavior: auto !important;
   }
 
   .page-content,
@@ -217,16 +220,32 @@
   .outline-main,
   .editor-workspace,
   .sidebar-popup,
-  .regenerate-modal {
+  .regenerate-modal,
+  .auth-form {
     animation: deckai-fade-in 120ms linear both !important;
   }
 
-  [data-reveal] {
+  .auth-notice,
+  .create-message,
+  .dashboard-message,
+  .outline-message,
+  .landing-hero__error,
+  .editor-toast,
+  .editor-toast--error,
+  .preview-message,
+  .speaker-notes__body,
+  .slide-stepper strong[data-step-dir] {
+    animation: none !important;
+  }
+
+  [data-reveal],
+  [data-reveal]:not([data-reveal-done="true"]) {
     opacity: 1 !important;
     transform: none !important;
     transition: none !important;
   }
 
+  :where(.sliding-pill-indicator),
   .sliding-pill-indicator {
     transition: none !important;
   }

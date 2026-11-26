@@ -49,6 +49,12 @@ describe('DeckAI × Open Design Motion Choreography', () => {
     const motionCss = fs.readFileSync(path.join(srcDir, 'styles', 'motion.css'), 'utf8');
     expect(motionCss).toMatch(/@media\s*\(\s*prefers-reduced-motion:\s*reduce\s*\)/);
     expect(motionCss).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+    expect(motionCss).toMatch(/@keyframes\s+deckai-rise-in[\s\S]*?to\s*\{[\s\S]*?transform:\s*none;/);
+
+    const tokensCss = fs.readFileSync(path.join(srcDir, 'styles', 'tokens.css'), 'utf8');
+    const definedVars = new Set(
+      Array.from(tokensCss.matchAll(/(--[a-zA-Z0-9-]+)\s*:/g), (match) => match[1])
+    );
 
     function collectCssFiles(dir) {
       return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -59,16 +65,32 @@ describe('DeckAI × Open Design Motion Choreography', () => {
     }
 
     const transitionAllOffenders = [];
+    const layoutTransitionOffenders = [];
+    const undefinedVarOffenders = [];
+
     for (const file of collectCssFiles(srcDir)) {
       const css = fs.readFileSync(file, 'utf8');
+      const rel = path.relative(srcDir, file);
       if (/transition\s*:\s*all\b/i.test(css)) {
-        transitionAllOffenders.push(path.relative(srcDir, file));
+        transitionAllOffenders.push(rel);
+      }
+      for (const match of css.matchAll(/transition(?:-property)?\s*:\s*([^;{}]+);/gi)) {
+        if (/\b(width|height|top|left|margin|padding)\b/i.test(match[1])) {
+          layoutTransitionOffenders.push(`${rel}: ${match[1].trim()}`);
+        }
+      }
+      for (const match of css.matchAll(/var\(\s*(--[a-zA-Z0-9-]+)\s*\)/g)) {
+        if (!definedVars.has(match[1])) {
+          undefinedVarOffenders.push(`${rel}: ${match[1]}`);
+        }
       }
     }
     expect(transitionAllOffenders).toEqual([]);
+    expect(layoutTransitionOffenders).toEqual([]);
+    expect(undefinedVarOffenders).toEqual([]);
   });
 
-  it('drives directional SlideCanvas transitions, sliding tab pill, and tour play/pause controls in HeroShowcase', () => {
+  it('drives directional SlideCanvas transitions, sliding tab pill, and tour play/pause/focus controls in HeroShowcase', () => {
     render(
       <MemoryRouter initialEntries={['/']}>
         <App />
@@ -88,9 +110,14 @@ describe('DeckAI × Open Design Motion Choreography', () => {
     const initialLabel = tourBtn.getAttribute('aria-label');
     fireEvent.click(tourBtn);
     expect(tourBtn.getAttribute('aria-label')).not.toBe(initialLabel);
+    expect(showcase.querySelector('.hero-showcase__tab-progress')).toBeInTheDocument();
+
+    // Focusing a layout tab pauses the active tour tick (WCAG 2.2.2)
+    fireEvent.focus(within(showcase).getByRole('tab', { name: /section break/i }));
+    expect(showcase.querySelector('.hero-showcase__tab-progress')).not.toBeInTheDocument();
   });
 
-  it('animates PreviewPage slide direction, highlights moved Outline sections, and keeps EditorPage SlideCanvas mounted during inline typing', async () => {
+  it('animates PreviewPage slide direction, keeps Outline sticky footer viewport-fixed, and keeps EditorPage SlideCanvas + bullets mounted during inline typing', async () => {
     globalThis.fetch = vi.fn().mockRejectedValue(new TypeError('Offline'));
     await api.loginDemo();
 
@@ -100,6 +127,8 @@ describe('DeckAI × Open Design Motion Choreography', () => {
       </MemoryRouter>
     );
     expect(await screen.findByRole('heading', { name: /presentation preview/i })).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: 'ArrowLeft' });
+    expect(document.querySelector('.slide-canvas')).toHaveAttribute('data-direction', 'neutral');
     fireEvent.click(screen.getByRole('button', { name: /^next$/i }));
     expect(document.querySelector('.slide-canvas')).toHaveAttribute('data-direction', 'forward');
     fireEvent.click(screen.getByRole('button', { name: /^previous$/i }));
@@ -112,6 +141,10 @@ describe('DeckAI × Open Design Motion Choreography', () => {
       </MemoryRouter>
     );
     expect(await screen.findByRole('heading', { name: /outline editor/i })).toBeInTheDocument();
+    const outlineMain = document.querySelector('.outline-main');
+    const outlineSticky = document.querySelector('.outline-sticky');
+    expect(outlineSticky).toBeInTheDocument();
+    expect(outlineMain?.contains(outlineSticky)).toBe(false);
     fireEvent.click(screen.getByRole('button', { name: 'Move section 2 up' }));
     expect(document.querySelector('.outline-card--highlighted')).toBeInTheDocument();
     unmountOutline();
@@ -126,6 +159,13 @@ describe('DeckAI × Open Design Motion Choreography', () => {
     fireEvent.change(titleInput, { target: { value: 'Instant Inline Headline Edit' } });
     const canvasAfterTyping = document.querySelector('.slide-canvas');
     expect(canvasAfterTyping).toBe(canvasBeforeTyping);
+
+    const bulletInput = screen.getByLabelText('Bullet 2');
+    const bulletNodeBefore = document.querySelector('.slide-canvas__points li');
+    expect(bulletNodeBefore).toBeInTheDocument();
+    fireEvent.change(bulletInput, { target: { value: 'Updated live bullet without remount' } });
+    const bulletNodeAfter = document.querySelector('.slide-canvas__points li');
+    expect(bulletNodeAfter).toBe(bulletNodeBefore);
 
     fireEvent.click(screen.getByRole('button', { name: /two column/i }));
     expect(document.querySelector('.slide-canvas')).not.toBe(canvasBeforeTyping);

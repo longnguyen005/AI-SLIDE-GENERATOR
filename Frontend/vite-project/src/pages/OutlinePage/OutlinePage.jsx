@@ -310,32 +310,32 @@ export default function OutlinePage() {
             />
           ))}
         </section>
-
-        <footer className="outline-sticky">
-          <div className="outline-sticky__summary">
-            <strong>{`${sections.length} ${sections.length === 1 ? 'section' : 'sections'}`}</strong>
-            <small>{`Estimated ${sections.length} ${sections.length === 1 ? 'slide' : 'slides'}`}</small>
-          </div>
-          <span className="outline-sticky__status">
-            <Icon name="clock" size={16} />
-            {savingDraft
-              ? 'Saving draft...'
-              : draftDirty
-                ? 'Unsaved changes'
-                : 'Synced with backend'}
-          </span>
-          <Button variant="outline" icon="back" onClick={backToTopic} disabled={savingDraft}>
-            Back to Topic
-          </Button>
-          <Button
-            icon="wand"
-            onClick={() => setConfirmGenerate(true)}
-            disabled={loading || generatingSlides || !sections.length}
-          >
-            {generatingSlides ? 'Generating...' : 'Generate Slides'}
-          </Button>
-        </footer>
       </main>
+
+      <footer className="outline-sticky">
+        <div className="outline-sticky__summary">
+          <strong>{`${sections.length} ${sections.length === 1 ? 'section' : 'sections'}`}</strong>
+          <small>{`Estimated ${sections.length} ${sections.length === 1 ? 'slide' : 'slides'}`}</small>
+        </div>
+        <span className="outline-sticky__status">
+          <Icon name="clock" size={16} />
+          {savingDraft
+            ? 'Saving draft...'
+            : draftDirty
+              ? 'Unsaved changes'
+              : 'Synced with backend'}
+        </span>
+        <Button variant="outline" icon="back" onClick={backToTopic} disabled={savingDraft}>
+          Back to Topic
+        </Button>
+        <Button
+          icon="wand"
+          onClick={() => setConfirmGenerate(true)}
+          disabled={loading || generatingSlides || !sections.length}
+        >
+          {generatingSlides ? 'Generating...' : 'Generate Slides'}
+        </Button>
+      </footer>
 
       {confirmGenerate && (
         <div className="sidebar-popup-backdrop">

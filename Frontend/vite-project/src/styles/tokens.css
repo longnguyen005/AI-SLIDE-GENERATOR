@@ -92,6 +92,9 @@
   --elev-raised:
     0 2px 6px rgba(17, 19, 21, 0.06),
     0 0 0 1px rgba(17, 19, 21, 0.04);
+  --elev-card:
+    0 8px 20px rgba(17, 19, 21, 0.08),
+    0 0 0 1px rgba(17, 19, 21, 0.05);
 
   --focus-ring:
     0 0 0 2px color-mix(in oklab, var(--accent), transparent 28%),
@@ -171,6 +174,9 @@
   --elev-raised:
     rgba(0, 0, 0, 0.4) 0px 2px 4px,
     0 0 0 1px rgba(255, 255, 255, 0.05);
+  --elev-card:
+    0 10px 24px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
 
   --focus-ring:
     0 0 0 2px color-mix(in oklab, var(--accent), transparent 30%),

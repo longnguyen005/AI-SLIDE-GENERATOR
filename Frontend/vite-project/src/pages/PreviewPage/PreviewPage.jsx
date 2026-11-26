@@ -12,21 +12,23 @@ import './PreviewPage.css';
 export default function PreviewPage() {
   const { deckId } = useParams();
   const [slides, setSlides] = useState([]);
-  const [index, setIndex] = useState(0);
-  const [slideDir, setSlideDir] = useState(0);
+  const [slideNav, setSlideNav] = useState({ index: 0, dir: 0 });
   const [notesOpen, setNotesOpen] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(Boolean(deckId));
   const [exporting, setExporting] = useState(false);
 
+  const index = slideNav.index;
+  const slideDir = slideNav.dir;
+
   const previous = () => {
-    setSlideDir(-1);
-    setIndex((value) => Math.max(0, value - 1));
+    setSlideNav((prev) => (prev.index <= 0 ? prev : { index: prev.index - 1, dir: -1 }));
   };
   const next = () => {
-    setSlideDir(1);
-    setIndex((value) => Math.min(slides.length - 1, value + 1));
+    setSlideNav((prev) =>
+      prev.index >= slides.length - 1 ? prev : { index: prev.index + 1, dir: 1 }
+    );
   };
   const activeSlide = slides[index];
 
@@ -39,8 +41,7 @@ export default function PreviewPage() {
         const result = await api.getSlides(deckId);
         if (active) {
           setSlides(result.slides || []);
-          setSlideDir(0);
-          setIndex(0);
+          setSlideNav({ index: 0, dir: 0 });
         }
       } catch (error) {
         if (active) setMessage(error.message);
@@ -61,12 +62,12 @@ export default function PreviewPage() {
       const tag = event.target?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || event.target?.isContentEditable) return;
       if (event.key === 'ArrowLeft') {
-        setSlideDir(-1);
-        setIndex((value) => Math.max(0, value - 1));
+        setSlideNav((prev) => (prev.index <= 0 ? prev : { index: prev.index - 1, dir: -1 }));
       }
       if (event.key === 'ArrowRight') {
-        setSlideDir(1);
-        setIndex((value) => Math.min(slides.length - 1, value + 1));
+        setSlideNav((prev) =>
+          prev.index >= slides.length - 1 ? prev : { index: prev.index + 1, dir: 1 }
+        );
       }
     };
     window.addEventListener('keydown', handler);
@@ -241,10 +242,11 @@ export default function PreviewPage() {
                     key={slide._id || `slide-${slideIndex}`}
                     className={isActive ? 'is-active' : ''}
                     onClick={() => {
-                      if (slideIndex !== index) {
-                        setSlideDir(slideIndex > index ? 1 : -1);
-                        setIndex(slideIndex);
-                      }
+                      setSlideNav((prev) =>
+                        slideIndex === prev.index
+                          ? prev
+                          : { index: slideIndex, dir: slideIndex > prev.index ? 1 : -1 }
+                      );
                     }}
                     aria-label={`Go to slide ${slideIndex + 1}: ${slideTitle}`}
                     aria-current={isActive ? 'true' : undefined}

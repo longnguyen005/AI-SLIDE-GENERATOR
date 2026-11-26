@@ -90,15 +90,16 @@ export default function HeroShowcase({ onLaunchDemo, demoLoading = false }) {
   const [tourState, setTourState] = useState(() => ({
     activeIndex: 0,
     direction: 0,
-    playing: typeof IntersectionObserver !== 'undefined',
+    playing: !reducedMotion && typeof IntersectionObserver !== 'undefined',
     pausedByPointer: false,
+    pausedByFocus: false,
     stepsTaken: 0,
   }));
 
   const activeIndex = tourState.activeIndex;
   const activeTab = SHOWCASE_TABS[activeIndex] || SHOWCASE_TABS[0];
-  const isTourEnabled = tourState.playing && !reducedMotion && tourState.stepsTaken < MAX_TOUR_STEPS;
-  const isTourTicking = isTourEnabled && !tourState.pausedByPointer;
+  const isTourEnabled = tourState.playing && tourState.stepsTaken < MAX_TOUR_STEPS;
+  const isTourTicking = isTourEnabled && !tourState.pausedByPointer && !tourState.pausedByFocus;
 
   useTilt3D(windowRef, { maxDeg: 3.2 });
   const pillRef = useSlidingPill(tablistRef, activeIndex);
@@ -137,11 +138,12 @@ export default function HeroShowcase({ onLaunchDemo, demoLoading = false }) {
 
   const toggleTour = () => {
     setTourState((prev) => {
-      const currentlyRunning = prev.playing && !reducedMotion && prev.stepsTaken < MAX_TOUR_STEPS;
+      const currentlyRunning = prev.playing && prev.stepsTaken < MAX_TOUR_STEPS;
       return {
         ...prev,
         playing: !currentlyRunning,
         pausedByPointer: false,
+        pausedByFocus: false,
         stepsTaken: currentlyRunning ? prev.stepsTaken : 0,
       };
     });
@@ -172,6 +174,15 @@ export default function HeroShowcase({ onLaunchDemo, demoLoading = false }) {
         className="hero-showcase__window"
         onMouseEnter={() => setTourState((prev) => (prev.pausedByPointer ? prev : { ...prev, pausedByPointer: true }))}
         onMouseLeave={() => setTourState((prev) => (!prev.pausedByPointer ? prev : { ...prev, pausedByPointer: false }))}
+        onFocusCapture={(event) => {
+          if (event.target?.closest?.('.hero-showcase__tour-btn')) return;
+          setTourState((prev) => (prev.pausedByFocus ? prev : { ...prev, pausedByFocus: true }));
+        }}
+        onBlurCapture={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) {
+            setTourState((prev) => (!prev.pausedByFocus ? prev : { ...prev, pausedByFocus: false }));
+          }
+        }}
       >
         <div className="hero-showcase__chrome">
           <div className="hero-showcase__titlebar">

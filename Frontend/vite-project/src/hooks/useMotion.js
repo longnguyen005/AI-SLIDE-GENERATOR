@@ -45,16 +45,26 @@ export function useScrollReveal(containerRef) {
     if (reducedMotion || typeof IntersectionObserver === 'undefined') {
       for (const element of targets) {
         element.setAttribute('data-visible', 'true');
+        element.setAttribute('data-reveal-done', 'true');
       }
       return undefined;
     }
+
+    const timers = new Set();
 
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
           if (entry.isIntersecting) {
-            entry.target.setAttribute('data-visible', 'true');
-            observer.unobserve(entry.target);
+            const target = entry.target;
+            target.setAttribute('data-visible', 'true');
+            const rawStagger = Number(target.style.getPropertyValue('--stagger-index')) || 0;
+            const timerId = window.setTimeout(() => {
+              target.setAttribute('data-reveal-done', 'true');
+              timers.delete(timerId);
+            }, 520 + rawStagger * 55);
+            timers.add(timerId);
+            observer.unobserve(target);
           }
         }
       },
@@ -65,7 +75,13 @@ export function useScrollReveal(containerRef) {
       observer.observe(element);
     }
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      for (const timerId of timers) {
+        window.clearTimeout(timerId);
+      }
+      timers.clear();
+    };
   }, [containerRef, reducedMotion]);
 }
 
@@ -99,6 +115,9 @@ export function useSlidingPill(containerRef, activeIndex) {
     if (typeof ResizeObserver !== 'undefined') {
       const resizeObserver = new ResizeObserver(syncPosition);
       resizeObserver.observe(container);
+      for (const item of container.querySelectorAll('[data-pill-item]')) {
+        resizeObserver.observe(item);
+      }
       return () => resizeObserver.disconnect();
     }
 

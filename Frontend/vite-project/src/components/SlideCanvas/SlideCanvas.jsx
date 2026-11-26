@@ -61,7 +61,7 @@ export default function SlideCanvas({ slide, direction = 0 }) {
             {points.length > 1 && (
               <ul className="slide-canvas__points slide-canvas__points--compact">
                 {points.slice(1).map((point, index) => (
-                  <li key={`${point}-${index}`} style={{ '--item-index': index + 1 }}>
+                  <li key={index} style={{ '--item-index': index + 1 }}>
                     <span>{String(index + 2).padStart(2, '0')}</span>
                     <p>{point}</p>
                   </li>
@@ -95,7 +95,7 @@ export default function SlideCanvas({ slide, direction = 0 }) {
           {points.length ? (
             <ul className="slide-canvas__points slide-canvas__points--section">
               {points.map((point, index) => (
-                <li key={`${point}-${index}`} style={{ '--item-index': index }}>
+                <li key={index} style={{ '--item-index': index }}>
                   <span>{String(index + 1).padStart(2, '0')}</span>
                   <p>{point}</p>
                 </li>
@@ -117,7 +117,7 @@ export default function SlideCanvas({ slide, direction = 0 }) {
             {points.length ? (
               <ul className="slide-canvas__points">
                 {points.map((point, index) => (
-                  <li key={`${point}-${index}`} style={{ '--item-index': index }}>
+                  <li key={index} style={{ '--item-index': index }}>
                     <span>{String(index + 1).padStart(2, '0')}</span>
                     <p>{point}</p>
                   </li>
@@ -153,7 +153,7 @@ export default function SlideCanvas({ slide, direction = 0 }) {
               {leftColumnPoints.length ? (
                 <ul className="slide-canvas__points">
                   {leftColumnPoints.map((point, index) => (
-                    <li key={`${point}-${index}`} style={{ '--item-index': index + 1 }}>
+                    <li key={index} style={{ '--item-index': index + 1 }}>
                       <span>{String(index + 1).padStart(2, '0')}</span>
                       <p>{point}</p>
                     </li>
@@ -168,7 +168,7 @@ export default function SlideCanvas({ slide, direction = 0 }) {
               {rightColumnPoints.length ? (
                 <ul className="slide-canvas__points">
                   {rightColumnPoints.map((point, index) => (
-                    <li key={`${point}-${index}`} style={{ '--item-index': midIndex + index + 1 }}>
+                    <li key={index} style={{ '--item-index': midIndex + index + 1 }}>
                       <span>{String(midIndex + index + 1).padStart(2, '0')}</span>
                       <p>{point}</p>
                     </li>
@@ -192,7 +192,7 @@ export default function SlideCanvas({ slide, direction = 0 }) {
             <ul className="slide-canvas__summary-grid">
               {points.map((point, index) => (
                 <li
-                  key={`${point}-${index}`}
+                  key={index}
                   className="slide-canvas__summary-card"
                   style={{ '--item-index': index }}
                 >
