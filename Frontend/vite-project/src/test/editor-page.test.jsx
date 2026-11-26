@@ -348,13 +348,17 @@ describe('Task 4: Connected EditorPage, 5-Layout SlideCanvas & Workspace Polish'
     const regenDialog = await screen.findByRole('dialog', { name: /regenerate this slide/i });
     expect(within(regenDialog).getByRole('button', { name: 'Close' })).toBeInTheDocument();
 
+    const initialTitle = screen.getByLabelText(/slide title/i).value;
     fireEvent.click(within(regenDialog).getByRole('button', { name: 'Make it clearer' }));
     fireEvent.click(within(regenDialog).getByRole('button', { name: /^regenerate$/i }));
 
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: /regenerate this slide/i })).not.toBeInTheDocument();
     });
-    expect(screen.getByLabelText(/slide title/i).value).toMatch(/\(Refined\)$/);
+    const regeneratedTitle = screen.getByLabelText(/slide title/i).value;
+    expect(regeneratedTitle.length).toBeGreaterThan(5);
+    expect(regeneratedTitle).not.toBe(initialTitle);
+    expect(regeneratedTitle).not.toMatch(/\(Refined\)$/);
 
     unmount();
 

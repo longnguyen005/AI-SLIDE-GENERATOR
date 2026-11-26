@@ -1,15 +1,18 @@
 import React from 'react';
 import Icon from '../Icon/Icon';
+import { OUTLINE_LAYOUT_OPTIONS } from '../../constants/slideLayouts';
 import './OutlineCard.css';
 
 export default function OutlineCard({
   number,
   title,
   summary,
+  suggestedLayout = '',
   highlighted = false,
   staggerIndex = 0,
   onTitleChange,
   onSummaryChange,
+  onLayoutChange,
   onMoveUp,
   onMoveDown,
   onRemove,
@@ -33,6 +36,18 @@ export default function OutlineCard({
         <div className="outline-card__top">
           <span className="outline-card__label">Section title</span>
           <div className="outline-card__controls">
+            <select
+              className="outline-card__layout-select"
+              aria-label={`Target layout for section ${number}`}
+              value={suggestedLayout || ''}
+              onChange={(event) => onLayoutChange?.(event.target.value)}
+            >
+              {OUTLINE_LAYOUT_OPTIONS.map((option) => (
+                <option key={option.value || 'auto'} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
             <button
               type="button"
               className="outline-card__control"

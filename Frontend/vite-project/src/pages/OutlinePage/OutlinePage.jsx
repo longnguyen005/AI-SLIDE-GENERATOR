@@ -5,6 +5,7 @@ import ProgressSteps from '../../components/ProgressSteps/ProgressSteps';
 import OutlineCard from '../../components/OutlineCard/OutlineCard';
 import Button from '../../components/Button/Button';
 import Icon from '../../components/Icon/Icon';
+import { VALID_LAYOUTS } from '../../constants/slideLayouts';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { api } from '../../service/apiClient';
@@ -40,6 +41,8 @@ function ensureSectionIds(rawSections = []) {
     id: section.id ? String(section.id) : createSectionId(),
     title: typeof section.title === 'string' ? section.title : `Section ${index + 1}`,
     summary: typeof section.summary === 'string' ? section.summary : '',
+    suggestedLayout: VALID_LAYOUTS.has(section.suggestedLayout) ? section.suggestedLayout : '',
+    layoutPinned: Boolean(section.layoutPinned),
     order: index + 1,
   }));
 }
@@ -47,11 +50,13 @@ function ensureSectionIds(rawSections = []) {
 function normalizeSectionsForSave(list = []) {
   return list.map((section, idx) => {
     const trimmedTitle = String(section.title ?? '').trim();
+    const layout = VALID_LAYOUTS.has(section.suggestedLayout) ? section.suggestedLayout : undefined;
     return {
       id: section.id ? String(section.id).trim() : createSectionId(),
       title: trimmedTitle ? trimmedTitle.slice(0, 200) : `Section ${idx + 1}`,
       summary: String(section.summary ?? '').trim().slice(0, 1000),
       order: idx + 1,
+      ...(layout ? { suggestedLayout: layout } : {}),
     };
   });
 }
@@ -136,18 +141,40 @@ export default function OutlinePage() {
     setDraftDirty(true);
   };
 
+  const updateSectionLayout = (index, layoutValue) => {
+    setSections((current) =>
+      current.map((section, sectionIndex) =>
+        sectionIndex === index
+          ? {
+              ...section,
+              suggestedLayout: VALID_LAYOUTS.has(layoutValue) ? layoutValue : '',
+              layoutPinned: Boolean(layoutValue),
+            }
+          : section
+      )
+    );
+    setDraftDirty(true);
+  };
+
   const addSection = () => {
     if (sections.length >= 10) return;
     const newId = createSectionId();
     setSections((current) => {
       if (current.length >= 10) return current;
       const nextNumber = current.length + 1;
+      const adjusted = current.map((item, idx) =>
+        idx === current.length - 1 && !item.layoutPinned && item.suggestedLayout === 'summary'
+          ? { ...item, suggestedLayout: '' }
+          : item
+      );
       return [
-        ...current,
+        ...adjusted,
         {
           id: newId,
           title: `Section ${nextNumber}`,
           summary: '',
+          suggestedLayout: '',
+          layoutPinned: false,
           order: nextNumber,
         },
       ];
@@ -165,7 +192,14 @@ export default function OutlinePage() {
       const next = [...current];
       const [moved] = next.splice(index, 1);
       next.splice(targetIndex, 0, moved);
-      return next.map((item, idx) => ({ ...item, order: idx + 1 }));
+      return next.map((item, idx) => {
+        let nextLayout = item.suggestedLayout;
+        if (!item.layoutPinned) {
+          if (nextLayout === 'title' && idx !== 0) nextLayout = '';
+          if (nextLayout === 'summary' && idx !== next.length - 1) nextLayout = '';
+        }
+        return { ...item, suggestedLayout: nextLayout, order: idx + 1 };
+      });
     });
     if (movedId) setHighlightedId(movedId);
     setDraftDirty(true);
@@ -297,10 +331,12 @@ export default function OutlinePage() {
               number={index + 1}
               title={section.title}
               summary={section.summary || ''}
+              suggestedLayout={section.suggestedLayout || ''}
               highlighted={section.id === highlightedId}
               staggerIndex={Math.min(index, 7)}
               onTitleChange={(value) => updateSection(index, 'title', value)}
               onSummaryChange={(value) => updateSection(index, 'summary', value)}
+              onLayoutChange={(value) => updateSectionLayout(index, value)}
               onMoveUp={() => moveSection(index, -1)}
               onMoveDown={() => moveSection(index, 1)}
               onRemove={() => removeSection(index)}

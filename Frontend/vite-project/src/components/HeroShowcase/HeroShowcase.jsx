@@ -56,10 +56,53 @@ const SHOWCASE_TABS = [
       layout: 'two_column',
       title: 'Ad-Hoc Pilot vs. Governed Production Rollout',
       content: [
-        'Unstructured prompt templates with manual copy-paste verification across teams.',
-        'Fragmented API credentials and inconsistent department-level cost visibility.',
-        'Shared workspace playbooks with automated citation checks and version history.',
-        'Centralized model gateway with policy enforcement and per-team spend attribution.',
+        'Ad-Hoc Pilot: Unstructured prompt templates with manual copy-paste verification.',
+        'Ad-Hoc Pilot: Fragmented API credentials and inconsistent department cost visibility.',
+        'Governed Rollout: Shared workspace playbooks with automated citation checks.',
+        'Governed Rollout: Centralized model gateway with per-team spend attribution.',
+      ],
+    },
+  },
+  {
+    label: 'KPI Metrics',
+    layout: 'metrics',
+    slide: {
+      slideNumber: 5,
+      layout: 'metrics',
+      title: 'Verified Q3 Pilot Performance Scorecard',
+      content: [
+        '34% Faster | Support escalation drafting dropped from 38m to 25m',
+        '91% Accuracy | Grounded source citations verified across internal docs',
+        '+62 NPS | Internal specialist satisfaction after inline source links',
+        '$18 / Seat | Predictable monthly unit cost under multi-model routing',
+      ],
+    },
+  },
+  {
+    label: 'Roadmap Flow',
+    layout: 'timeline',
+    slide: {
+      slideNumber: 6,
+      layout: 'timeline',
+      title: 'Phased 90-Day Enterprise Rollout Plan',
+      content: [
+        'Phase 1 (Days 1-30): Finalize SSO role mappings and onboard 240 pilot seats.',
+        'Phase 2 (Days 31-60): Connect CRM and engineering runbooks with weekly audits.',
+        'Phase 3 (Days 61-90): Review ROI scorecard and expand to global GTM pods.',
+      ],
+    },
+  },
+  {
+    label: 'Thesis Callout',
+    layout: 'callout',
+    slide: {
+      slideNumber: 7,
+      layout: 'callout',
+      title: 'Platform Governance Accelerates Adoption',
+      content: [
+        'Security guardrails built into the routing layer unlock faster seat expansion than post-hoc compliance reviews.',
+        'Zero-retention enterprise model endpoints prevent training data leakage.',
+        'Automatic RBAC inheritance keeps sensitive repositories strictly scoped.',
       ],
     },
   },
@@ -67,7 +110,7 @@ const SHOWCASE_TABS = [
     label: 'Executive Summary',
     layout: 'summary',
     slide: {
-      slideNumber: 5,
+      slideNumber: 8,
       layout: 'summary',
       title: 'Q4 Board Recommendations & Next Milestones',
       content: [
@@ -197,7 +240,7 @@ export default function HeroShowcase({ onLaunchDemo, demoLoading = false }) {
                 Enterprise AI Copilots — Q4 Board Briefing
               </span>
               <span className="hero-showcase__doc-badge">
-                {`0${activeTab.slide.slideNumber} / 05`}
+                {`${String(activeTab.slide.slideNumber).padStart(2, '0')} / ${String(SHOWCASE_TABS.length).padStart(2, '0')}`}
               </span>
             </div>
             <button

@@ -165,15 +165,15 @@
   overflow: hidden;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  min-height: 32px;
-  padding: 0 12px;
+  gap: 6px;
+  min-height: 31px;
+  padding: 0 10px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: color-mix(in oklab, var(--surface), transparent 18%);
   color: var(--muted);
   font-family: var(--font-body);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   transition:

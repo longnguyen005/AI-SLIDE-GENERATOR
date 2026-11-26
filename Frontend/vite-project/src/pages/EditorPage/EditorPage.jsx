@@ -6,18 +6,11 @@ import Button from '../../components/Button/Button';
 import SlideCanvas from '../../components/SlideCanvas/SlideCanvas';
 import RegenerateModal from '../../components/RegenerateModal/RegenerateModal';
 import { DECK_THEME_OPTIONS, normalizeDeckTheme } from '../../constants/deckThemes';
+import { LAYOUT_OPTIONS } from '../../constants/slideLayouts';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { api } from '../../service/apiClient';
 import './EditorPage.css';
-
-const LAYOUT_OPTIONS = [
-  { value: 'title', label: 'Title Cover', hint: 'Hero intro', icon: 'sparkles' },
-  { value: 'section', label: 'Section Divider', hint: 'Chapter break', icon: 'layers' },
-  { value: 'content', label: 'Standard Content', hint: 'Points + visual', icon: 'slide' },
-  { value: 'two_column', label: 'Two Column', hint: 'Split comparison', icon: 'template' },
-  { value: 'summary', label: 'Executive Summary', hint: 'Key takeaways', icon: 'check' },
-];
 
 function initials(name = '') {
   const parts = String(name).trim().split(/\s+/).filter(Boolean);
@@ -534,11 +527,14 @@ export default function EditorPage() {
     }
   };
 
-  const handleRegenerate = async (instruction) => {
+  const handleRegenerate = async (regenInput) => {
     if (!activeSlide) return;
     const targetSlideId = activeSlide._id;
     setErrorMessage('');
-    const result = await api.regenerateSlide(targetSlideId, instruction);
+    if (draftsBySlideId[targetSlideId]) {
+      await flushDraftSlides([targetSlideId]);
+    }
+    const result = await api.regenerateSlide(targetSlideId, regenInput);
     setSlides((prev) =>
       prev.map((slide) => (slide._id === result.slide._id ? result.slide : slide))
     );

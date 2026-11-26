@@ -395,6 +395,22 @@
   border-color: var(--border-strong);
 }
 
+.thumb--metrics {
+  color: var(--accent-text);
+  border-color: var(--accent-border);
+  background: var(--bg-panel);
+}
+
+.thumb--timeline {
+  color: var(--warn-text);
+  background: var(--warn-soft);
+}
+
+.thumb--callout {
+  color: var(--accent-text);
+  background: var(--accent-soft);
+}
+
 .thumb--summary {
   color: var(--success-text);
   background: var(--success-soft);

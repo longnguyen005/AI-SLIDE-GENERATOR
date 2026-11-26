@@ -12,22 +12,22 @@ import './LandingPage.css';
 
 const features = [
   ['list', 'AI Outline Generation', 'Enter a topic and brief to generate a structured section-by-section narrative in seconds.'],
-  ['layers', 'Smart Slide Creation', 'Map each section onto purpose-built cover, divider, insight, split, and summary layouts.'],
+  ['layers', 'Smart Slide Creation', 'Map each section onto purpose-built cover, callout, KPI metrics, roadmap, split, and summary layouts.'],
   ['edit', 'Inline Editing', 'Refine titles, bullet points, layout types, and speaker notes directly beside the canvas.'],
-  ['wand', 'AI Slide Regeneration', 'Rewrite individual slides with targeted prompts while snapshotting version history automatically.'],
+  ['wand', 'Scoped AI Regeneration', 'Rewrite full slides, bullets only, or presenter scripts — or convert layouts in one click with version snapshots.'],
   ['eye', 'Presentation Preview', 'Step through full-deck filmstrips and keyboard-navigable presenter views before sharing.'],
   ['download', 'PowerPoint Export', 'Download standards-compliant 16:9 .pptx files ready for PowerPoint, Keynote, and Google Slides.'],
 ];
 
 const workflowSteps = [
   ['Prompt', 'Describe your presentation topic, audience tone, and target slide count.'],
-  ['Structure', 'Review, reorder, or customize every outline section before generating slides.'],
-  ['Design', 'Switch across 5 adaptive slide layouts and fine-tune copy or speaker notes inline.'],
+  ['Structure', 'Review, reorder, or assign target slide archetypes on every outline section before generating.'],
+  ['Design', 'Switch across 8 adaptive slide layouts and fine-tune copy or speaker notes inline.'],
   ['Present', 'Preview full-screen in the browser or export native .pptx decks in one click.'],
 ];
 
 const productSpecs = [
-  ['5', 'Adaptive slide layouts'],
+  ['8', 'Adaptive slide layouts'],
   ['< 3.5s', 'Instant browser sandbox'],
   ['.pptx', 'Native PowerPoint OOXML'],
 ];

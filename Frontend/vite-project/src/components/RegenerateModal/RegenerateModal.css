@@ -10,7 +10,7 @@
 }
 
 .regenerate-modal {
-  width: min(460px, 100%);
+  width: min(520px, 100%);
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -81,11 +81,48 @@
   padding: 20px;
 }
 
+.regenerate-modal__tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  padding: 4px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-panel);
+}
+
+.regenerate-modal__tabs button {
+  min-height: 32px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard);
+}
+
+.regenerate-modal__tabs button:hover:not(:disabled) {
+  color: var(--fg);
+}
+
+.regenerate-modal__tabs button.is-active {
+  border-color: var(--accent-border);
+  background: var(--surface);
+  color: var(--accent-text);
+}
+
 .regenerate-modal__presets {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .regenerate-modal__presets button {
@@ -113,6 +150,31 @@
   border-color: var(--accent-border);
   background: var(--accent-soft);
   color: var(--accent-text);
+}
+
+.regenerate-modal label.regenerate-modal__toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 16px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-panel);
+  color: var(--fg-2);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+  cursor: pointer;
+}
+
+.regenerate-modal label.regenerate-modal__toggle input {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--accent);
 }
 
 .regenerate-modal label {
