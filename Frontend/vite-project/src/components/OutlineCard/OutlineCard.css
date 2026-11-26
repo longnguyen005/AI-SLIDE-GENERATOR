@@ -16,6 +16,14 @@
 
 .outline-card--highlighted {
   border-color: var(--accent);
+}
+
+.outline-card--highlighted::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  pointer-events: none;
   animation: deckai-highlight-pulse 640ms var(--ease-out) both;
 }
 
@@ -204,7 +212,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .outline-card,
-  .outline-card--highlighted {
+  .outline-card--highlighted::after {
     animation: none !important;
   }
 }

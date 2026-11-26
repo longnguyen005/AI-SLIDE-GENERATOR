@@ -51,6 +51,13 @@ describe('DeckAI × Open Design Motion Choreography', () => {
     expect(motionCss).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
     expect(motionCss).toMatch(/@keyframes\s+deckai-rise-in[\s\S]*?to\s*\{[\s\S]*?transform:\s*none;/);
 
+    const outlineCardCss = fs.readFileSync(
+      path.join(srcDir, 'components', 'OutlineCard', 'OutlineCard.css'),
+      'utf8'
+    );
+    expect(outlineCardCss).toMatch(/\.outline-card--highlighted::after\s*\{[\s\S]*?deckai-highlight-pulse/);
+    expect(outlineCardCss).not.toMatch(/\.outline-card--highlighted\s*\{[^}]*animation\s*:/);
+
     const tokensCss = fs.readFileSync(path.join(srcDir, 'styles', 'tokens.css'), 'utf8');
     const definedVars = new Set(
       Array.from(tokensCss.matchAll(/(--[a-zA-Z0-9-]+)\s*:/g), (match) => match[1])
