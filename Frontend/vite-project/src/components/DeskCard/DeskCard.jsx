@@ -29,7 +29,13 @@ function deckHref(deckId, status) {
   return `/outline/${deckId}`;
 }
 
-export default function DeckCard({ deck, selected = false, onDelete, deleting = false }) {
+export default function DeckCard({
+  deck,
+  selected = false,
+  staggerIndex = 0,
+  onDelete,
+  deleting = false,
+}) {
   const deckId = deck?._id || deck?.id || '';
   const title = String(deck?.title || deck?.topic || 'Untitled deck').trim() || 'Untitled deck';
   const statusLabel = deck?.status ? String(deck.status).replace(/_/g, ' ') : 'draft';
@@ -53,7 +59,10 @@ export default function DeckCard({ deck, selected = false, onDelete, deleting = 
   const coverHeadline = firstSectionTitle || distinctTopic || title;
 
   return (
-    <article className={`deck-card ${selected ? 'deck-card--selected' : ''}`}>
+    <article
+      className={`deck-card ${selected ? 'deck-card--selected' : ''}`}
+      style={{ '--stagger-index': staggerIndex }}
+    >
       {selected && (
         <span className="deck-card__check" aria-hidden="true">
           <Icon name="check" size={14} />

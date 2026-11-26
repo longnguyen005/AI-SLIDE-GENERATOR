@@ -100,6 +100,12 @@
   background: var(--accent-hover);
 }
 
+.outline-pill:active,
+.outline-theme-toggle:active,
+.outline-avatar-btn:active {
+  transform: scale(0.96);
+}
+
 .outline-pill:focus-visible,
 .outline-theme-toggle:focus-visible,
 .outline-avatar-btn:focus-visible {
@@ -132,6 +138,7 @@
   border-color: var(--danger-border);
   background: var(--danger-soft);
   font-size: var(--text-sm);
+  animation: deckai-shake 180ms var(--ease-out);
 }
 
 .outline-empty {

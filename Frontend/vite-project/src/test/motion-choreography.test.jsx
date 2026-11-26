@@ -4,6 +4,7 @@ import '@testing-library/jest-dom/vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import App from '../App';
+import { api } from '../service/apiClient';
 import { useCountUp, useReducedMotion, useScrollReveal } from '../hooks/useMotion';
 
 function RevealHarness() {
@@ -87,5 +88,46 @@ describe('DeckAI × Open Design Motion Choreography', () => {
     const initialLabel = tourBtn.getAttribute('aria-label');
     fireEvent.click(tourBtn);
     expect(tourBtn.getAttribute('aria-label')).not.toBe(initialLabel);
+  });
+
+  it('animates PreviewPage slide direction, highlights moved Outline sections, and keeps EditorPage SlideCanvas mounted during inline typing', async () => {
+    globalThis.fetch = vi.fn().mockRejectedValue(new TypeError('Offline'));
+    await api.loginDemo();
+
+    const { unmount: unmountPreview } = render(
+      <MemoryRouter initialEntries={['/preview/demo-deck-ready']}>
+        <App />
+      </MemoryRouter>
+    );
+    expect(await screen.findByRole('heading', { name: /presentation preview/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^next$/i }));
+    expect(document.querySelector('.slide-canvas')).toHaveAttribute('data-direction', 'forward');
+    fireEvent.click(screen.getByRole('button', { name: /^previous$/i }));
+    expect(document.querySelector('.slide-canvas')).toHaveAttribute('data-direction', 'backward');
+    unmountPreview();
+
+    const { unmount: unmountOutline } = render(
+      <MemoryRouter initialEntries={['/outline/demo-deck-outline']}>
+        <App />
+      </MemoryRouter>
+    );
+    expect(await screen.findByRole('heading', { name: /outline editor/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Move section 2 up' }));
+    expect(document.querySelector('.outline-card--highlighted')).toBeInTheDocument();
+    unmountOutline();
+
+    render(
+      <MemoryRouter initialEntries={['/editor/demo-deck-ready']}>
+        <App />
+      </MemoryRouter>
+    );
+    const titleInput = await screen.findByLabelText(/slide title/i);
+    const canvasBeforeTyping = document.querySelector('.slide-canvas');
+    fireEvent.change(titleInput, { target: { value: 'Instant Inline Headline Edit' } });
+    const canvasAfterTyping = document.querySelector('.slide-canvas');
+    expect(canvasAfterTyping).toBe(canvasBeforeTyping);
+
+    fireEvent.click(screen.getByRole('button', { name: /two column/i }));
+    expect(document.querySelector('.slide-canvas')).not.toBe(canvasBeforeTyping);
   });
 });

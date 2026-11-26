@@ -56,6 +56,7 @@ export default function CreatePresentationPage() {
   const [description, setDescription] = useState('');
   const [tone, setTone] = useState('professional');
   const [slideCount, setSlideCount] = useState(6);
+  const [stepDir, setStepDir] = useState('up');
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingDraft, setLoadingDraft] = useState(() => Boolean(deckId));
@@ -249,16 +250,24 @@ export default function CreatePresentationPage() {
                   type="button"
                   aria-label="Decrease slide count"
                   disabled={slideCount <= 3}
-                  onClick={() => setSlideCount((value) => Math.max(3, value - 1))}
+                  onClick={() => {
+                    setStepDir('down');
+                    setSlideCount((value) => Math.max(3, value - 1));
+                  }}
                 >
                   <Icon name="minus" size={16} />
                 </button>
-                <strong>{slideCount}</strong>
+                <strong key={slideCount} data-step-dir={stepDir}>
+                  {slideCount}
+                </strong>
                 <button
                   type="button"
                   aria-label="Increase slide count"
                   disabled={slideCount >= 10}
-                  onClick={() => setSlideCount((value) => Math.min(10, value + 1))}
+                  onClick={() => {
+                    setStepDir('up');
+                    setSlideCount((value) => Math.min(10, value + 1));
+                  }}
                 >
                   <Icon name="plus" size={16} />
                 </button>

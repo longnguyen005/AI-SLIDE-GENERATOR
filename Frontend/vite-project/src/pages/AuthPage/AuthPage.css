@@ -38,9 +38,14 @@
   font-weight: 500;
   cursor: pointer;
   transition:
-    background var(--motion-fast) var(--ease-standard),
-    border-color var(--motion-fast) var(--ease-standard),
-    color var(--motion-fast) var(--ease-standard);
+    background var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out),
+    color var(--motion-fast) var(--ease-out),
+    transform var(--motion-press) var(--ease-out);
+}
+
+.auth-theme-toggle:active {
+  transform: scale(0.97);
 }
 
 .auth-theme-toggle:hover {
@@ -73,6 +78,7 @@
   font-size: 13px;
   font-weight: 500;
   line-height: 1.45;
+  animation: deckai-shake 180ms var(--ease-out);
 }
 
 .auth-form {
@@ -83,6 +89,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface);
+  animation: deckai-rise-in var(--motion-enter) var(--ease-out) both;
 }
 
 .auth-form__header {

@@ -49,6 +49,7 @@ export default function EditorPage() {
   const [deck, setDeck] = useState(null);
   const [slides, setSlides] = useState([]);
   const [activeSlideId, setActiveSlideId] = useState(null);
+  const [slideDir, setSlideDir] = useState(0);
   const [draft, setDraft] = useState(null);
 
   const [loading, setLoading] = useState(Boolean(deckId));
@@ -154,6 +155,10 @@ export default function EditorPage() {
   };
 
   const selectSlide = (slideId) => {
+    const nextIdx = slides.findIndex((slide) => slide._id === slideId);
+    if (nextIdx >= 0 && activeIndex >= 0 && nextIdx !== activeIndex) {
+      setSlideDir(nextIdx > activeIndex ? 1 : -1);
+    }
     setActiveSlideId(slideId);
     setDraft(null);
     setErrorMessage('');
@@ -217,6 +222,7 @@ export default function EditorPage() {
         layout: 'content',
       });
       setSlides((prev) => [...prev, result.slide]);
+      setSlideDir(1);
       setActiveSlideId(result.slide._id);
       setDraft(null);
       setToast('Added a new slide.');
@@ -548,7 +554,11 @@ export default function EditorPage() {
                   </div>
                 </div>
 
-                <SlideCanvas slide={previewSlide} />
+                <SlideCanvas
+                  key={`${activeSlide._id}:${currentLayout}`}
+                  slide={previewSlide}
+                  direction={slideDir}
+                />
 
                 <div className="editor-inline-card">
                   <div className="editor-field">
@@ -614,7 +624,12 @@ export default function EditorPage() {
                     key={option.value}
                     className={currentLayout === option.value ? 'is-active' : ''}
                     aria-pressed={currentLayout === option.value}
-                    onClick={() => updateDraft({ layout: option.value })}
+                    onClick={() => {
+                      if (option.value !== currentLayout) {
+                        setSlideDir(0);
+                      }
+                      updateDraft({ layout: option.value });
+                    }}
                   >
                     <Icon name={option.icon} size={18} />
                     <strong>{option.label}</strong>

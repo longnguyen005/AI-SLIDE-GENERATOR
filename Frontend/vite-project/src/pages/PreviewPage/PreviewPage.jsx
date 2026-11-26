@@ -13,14 +13,21 @@ export default function PreviewPage() {
   const { deckId } = useParams();
   const [slides, setSlides] = useState([]);
   const [index, setIndex] = useState(0);
+  const [slideDir, setSlideDir] = useState(0);
   const [notesOpen, setNotesOpen] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(Boolean(deckId));
   const [exporting, setExporting] = useState(false);
 
-  const previous = () => setIndex((value) => Math.max(0, value - 1));
-  const next = () => setIndex((value) => Math.min(slides.length - 1, value + 1));
+  const previous = () => {
+    setSlideDir(-1);
+    setIndex((value) => Math.max(0, value - 1));
+  };
+  const next = () => {
+    setSlideDir(1);
+    setIndex((value) => Math.min(slides.length - 1, value + 1));
+  };
   const activeSlide = slides[index];
 
   useEffect(() => {
@@ -32,6 +39,7 @@ export default function PreviewPage() {
         const result = await api.getSlides(deckId);
         if (active) {
           setSlides(result.slides || []);
+          setSlideDir(0);
           setIndex(0);
         }
       } catch (error) {
@@ -52,8 +60,14 @@ export default function PreviewPage() {
       if (modalOpen) return;
       const tag = event.target?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || event.target?.isContentEditable) return;
-      if (event.key === 'ArrowLeft') setIndex((value) => Math.max(0, value - 1));
-      if (event.key === 'ArrowRight') setIndex((value) => Math.min(slides.length - 1, value + 1));
+      if (event.key === 'ArrowLeft') {
+        setSlideDir(-1);
+        setIndex((value) => Math.max(0, value - 1));
+      }
+      if (event.key === 'ArrowRight') {
+        setSlideDir(1);
+        setIndex((value) => Math.min(slides.length - 1, value + 1));
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -133,7 +147,11 @@ export default function PreviewPage() {
         {!loading && activeSlide && (
           <>
             <div className="preview-stage">
-              <SlideCanvas slide={activeSlide} />
+              <SlideCanvas
+                key={`${activeSlide._id || index}:${activeSlide.layout || 'content'}`}
+                slide={activeSlide}
+                direction={slideDir}
+              />
             </div>
 
             <div className="preview-controls">
@@ -222,7 +240,12 @@ export default function PreviewPage() {
                     type="button"
                     key={slide._id || `slide-${slideIndex}`}
                     className={isActive ? 'is-active' : ''}
-                    onClick={() => setIndex(slideIndex)}
+                    onClick={() => {
+                      if (slideIndex !== index) {
+                        setSlideDir(slideIndex > index ? 1 : -1);
+                        setIndex(slideIndex);
+                      }
+                    }}
                     aria-label={`Go to slide ${slideIndex + 1}: ${slideTitle}`}
                     aria-current={isActive ? 'true' : undefined}
                   >

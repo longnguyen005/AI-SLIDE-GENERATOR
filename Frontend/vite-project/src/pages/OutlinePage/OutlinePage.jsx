@@ -69,6 +69,15 @@ export default function OutlinePage() {
   const [draftDirty, setDraftDirty] = useState(false);
   const [panel, setPanel] = useState('');
   const [confirmGenerate, setConfirmGenerate] = useState(false);
+  const [highlightedId, setHighlightedId] = useState('');
+
+  useEffect(() => {
+    if (!highlightedId) return undefined;
+    const timerId = window.setTimeout(() => {
+      setHighlightedId('');
+    }, 700);
+    return () => window.clearTimeout(timerId);
+  }, [highlightedId]);
 
   useEffect(() => {
     if (!deckId) return;
@@ -129,25 +138,28 @@ export default function OutlinePage() {
 
   const addSection = () => {
     if (sections.length >= 10) return;
+    const newId = createSectionId();
     setSections((current) => {
       if (current.length >= 10) return current;
       const nextNumber = current.length + 1;
       return [
         ...current,
         {
-          id: createSectionId(),
+          id: newId,
           title: `Section ${nextNumber}`,
           summary: '',
           order: nextNumber,
         },
       ];
     });
+    setHighlightedId(newId);
     setDraftDirty(true);
   };
 
   const moveSection = (index, direction) => {
     const targetIndex = index + direction;
     if (targetIndex < 0 || targetIndex >= sections.length) return;
+    const movedId = sections[index]?.id || '';
     setSections((current) => {
       if (targetIndex < 0 || targetIndex >= current.length) return current;
       const next = [...current];
@@ -155,6 +167,7 @@ export default function OutlinePage() {
       next.splice(targetIndex, 0, moved);
       return next.map((item, idx) => ({ ...item, order: idx + 1 }));
     });
+    if (movedId) setHighlightedId(movedId);
     setDraftDirty(true);
   };
 
@@ -284,6 +297,8 @@ export default function OutlinePage() {
               number={index + 1}
               title={section.title}
               summary={section.summary || ''}
+              highlighted={section.id === highlightedId}
+              staggerIndex={Math.min(index, 7)}
               onTitleChange={(value) => updateSection(index, 'title', value)}
               onSummaryChange={(value) => updateSection(index, 'summary', value)}
               onMoveUp={() => moveSection(index, -1)}

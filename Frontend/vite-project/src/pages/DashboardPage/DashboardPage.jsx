@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Sidebar from '../../components/SideBar/SideBar';
 import Topbar from '../../components/Topbar/Topbar';
@@ -7,6 +7,7 @@ import StatCard from '../../components/StatCard/StatCard';
 import DeckCard from '../../components/DeskCard/DeskCard';
 import Icon from '../../components/Icon/Icon';
 import { api } from '../../service/apiClient';
+import { useSlidingPill } from '../../hooks/useMotion';
 import './DashboardPage.css';
 
 export default function DashboardPage() {
@@ -66,6 +67,13 @@ export default function DashboardPage() {
     [decks.length, readyCount, inProgressCount]
   );
 
+  const filtersRef = useRef(null);
+  const activeFilterIndex = Math.max(
+    0,
+    filterTabs.findIndex((tab) => tab.id === statusFilter)
+  );
+  const filterPillRef = useSlidingPill(filtersRef, activeFilterIndex);
+
   const filteredDecks = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     return decks.filter((deck) => {
@@ -123,10 +131,10 @@ export default function DashboardPage() {
         )}
 
         <section className="dashboard-stats" aria-label="Workspace stats">
-          <StatCard icon="dashboard" label="Total decks" value={decks.length} />
-          <StatCard icon="check" label="Ready decks" value={readyCount} tone="green" />
-          <StatCard icon="layers" label="Planned slides" value={plannedSlides} tone="blue" />
-          <StatCard icon="download" label="Exports" value={exportCount} />
+          <StatCard icon="dashboard" label="Total decks" value={decks.length} staggerIndex={0} />
+          <StatCard icon="check" label="Ready decks" value={readyCount} tone="green" staggerIndex={1} />
+          <StatCard icon="layers" label="Planned slides" value={plannedSlides} tone="blue" staggerIndex={2} />
+          <StatCard icon="download" label="Exports" value={exportCount} staggerIndex={3} />
         </section>
 
         <section className="dashboard-section">
@@ -141,16 +149,23 @@ export default function DashboardPage() {
             </div>
 
             <div
+              ref={filtersRef}
               className="dashboard-filters"
               role="group"
               aria-label="Filter presentations by status"
             >
+              <span
+                ref={filterPillRef}
+                className="dashboard-filters__pill sliding-pill-indicator"
+                aria-hidden="true"
+              />
               {filterTabs.map((tab) => {
                 const isActive = statusFilter === tab.id;
                 return (
                   <button
                     key={tab.id}
                     type="button"
+                    data-pill-item
                     className={`dashboard-filter-pill ${isActive ? 'dashboard-filter-pill--active' : ''}`}
                     aria-pressed={isActive}
                     onClick={() => setStatusFilter(tab.id)}
@@ -172,6 +187,7 @@ export default function DashboardPage() {
                   key={deck._id || deck.id}
                   deck={deck}
                   selected={index === 0 && !hasActiveFilter}
+                  staggerIndex={Math.min(index, 7)}
                   onDelete={handleDeleteDeck}
                   deleting={deletingId === (deck._id || deck.id)}
                 />

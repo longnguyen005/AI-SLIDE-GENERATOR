@@ -7,7 +7,16 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface);
-  transition: border-color var(--motion-fast) var(--ease-standard);
+  animation: deckai-rise-in var(--motion-enter) var(--ease-out) both;
+  animation-delay: calc(var(--stagger-index, 0) * 40ms);
+  transition:
+    border-color var(--motion-fast) var(--ease-out),
+    box-shadow var(--motion-base) var(--ease-out);
+}
+
+.outline-card--highlighted {
+  border-color: var(--accent);
+  animation: deckai-highlight-pulse 640ms var(--ease-out) both;
 }
 
 .outline-card:focus-within {
@@ -81,9 +90,14 @@
   color: var(--fg-2);
   cursor: pointer;
   transition:
-    background var(--motion-fast) var(--ease-standard),
-    border-color var(--motion-fast) var(--ease-standard),
-    color var(--motion-fast) var(--ease-standard);
+    background var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out),
+    color var(--motion-fast) var(--ease-out),
+    transform var(--motion-press) var(--ease-out);
+}
+
+.outline-card__control:active:not(:disabled) {
+  transform: scale(0.94);
 }
 
 .outline-card__control:hover:not(:disabled) {
@@ -185,5 +199,12 @@
 
   .outline-card__drag {
     display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .outline-card,
+  .outline-card--highlighted {
+    animation: none !important;
   }
 }

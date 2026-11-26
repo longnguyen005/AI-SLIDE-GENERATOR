@@ -6,6 +6,8 @@ export default function OutlineCard({
   number,
   title,
   summary,
+  highlighted = false,
+  staggerIndex = 0,
   onTitleChange,
   onSummaryChange,
   onMoveUp,
@@ -16,7 +18,10 @@ export default function OutlineCard({
   disableRemove = false,
 }) {
   return (
-    <article className="outline-card">
+    <article
+      className={`outline-card ${highlighted ? 'outline-card--highlighted' : ''}`.trim()}
+      style={{ '--stagger-index': staggerIndex }}
+    >
       <div className="outline-card__rail">
         <span className="outline-card__number">{number}</span>
         <span className="outline-card__drag" aria-hidden="true">

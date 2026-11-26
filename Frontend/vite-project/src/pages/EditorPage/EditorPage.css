@@ -237,8 +237,13 @@
   text-align: left;
   cursor: pointer;
   transition:
-    background var(--motion-fast) var(--ease-standard),
-    border-color var(--motion-fast) var(--ease-standard);
+    background var(--motion-fast) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out),
+    transform var(--motion-press) var(--ease-out);
+}
+
+.editor-thumbs > button:not(.editor-add):active {
+  transform: scale(0.98);
 }
 
 .editor-thumbs > button:not(.editor-add):hover {
@@ -385,12 +390,14 @@
   background: var(--accent-soft);
   font-size: var(--text-sm);
   font-weight: 500;
+  animation: deckai-rise-in var(--motion-base) var(--ease-out) both;
 }
 
 .editor-toast--error {
   border-color: var(--danger-border);
   background: var(--danger-soft);
   color: var(--danger-text);
+  animation: deckai-shake 180ms var(--ease-out);
 }
 
 .editor-version-modal__error {
@@ -635,8 +642,13 @@
   text-align: left;
   cursor: pointer;
   transition:
-    border-color var(--motion-fast) var(--ease-standard),
-    background var(--motion-fast) var(--ease-standard);
+    border-color var(--motion-fast) var(--ease-out),
+    background var(--motion-fast) var(--ease-out),
+    transform var(--motion-press) var(--ease-out);
+}
+
+.layout-grid button:active {
+  transform: scale(0.98);
 }
 
 .layout-grid button:hover {

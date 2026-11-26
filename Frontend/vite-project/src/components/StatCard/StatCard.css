@@ -8,6 +8,26 @@
   background: var(--surface);
   border: 1px solid var(--border);
   font-variant-numeric: tabular-nums;
+  animation: deckai-rise-in var(--motion-enter) var(--ease-out) both;
+  animation-delay: calc(var(--stagger-index, 0) * 45ms);
+  transition:
+    transform var(--motion-base) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out),
+    box-shadow var(--motion-base) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .stat-card:hover {
+    transform: translate3d(0, -2px, 0);
+    border-color: var(--border-strong);
+    box-shadow: var(--elev-card);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stat-card {
+    animation: none !important;
+  }
 }
 
 .stat-card__icon {

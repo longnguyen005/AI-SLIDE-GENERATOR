@@ -8,16 +8,33 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface);
+  animation: deckai-rise-in var(--motion-enter) var(--ease-out) both;
+  animation-delay: calc(var(--stagger-index, 0) * 45ms);
   transition:
-    border-color var(--motion-fast) var(--ease-standard),
-    box-shadow var(--motion-fast) var(--ease-standard),
-    transform var(--motion-fast) var(--ease-standard);
+    border-color var(--motion-fast) var(--ease-out),
+    box-shadow var(--motion-base) var(--ease-out),
+    transform var(--motion-base) var(--ease-out);
 }
 
-.deck-card:hover {
-  border-color: var(--border-strong);
-  box-shadow: var(--elev-raised);
-  transform: translateY(-2px);
+@media (hover: hover) and (pointer: fine) {
+  .deck-card:hover {
+    border-color: var(--border-strong);
+    box-shadow: var(--elev-raised);
+    transform: translate3d(0, -3px, 0);
+  }
+
+  .deck-card:hover .deck-card__cover-frame {
+    transform: scale(1.022);
+    border-color: var(--accent-border);
+  }
+
+  .deck-card:hover .deck-card__bar--primary {
+    transform: scaleX(1.08);
+  }
+}
+
+.deck-card:has(.deck-card__main:active) {
+  transform: scale(0.985);
 }
 
 .deck-card--selected {
@@ -74,6 +91,9 @@
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-sm);
   background: var(--surface);
+  transition:
+    transform var(--motion-base) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out);
 }
 
 .deck-card__cover-top {
@@ -135,6 +155,8 @@
   display: block;
   height: 5px;
   border-radius: var(--radius-pill);
+  transform-origin: left center;
+  transition: transform var(--motion-base) var(--ease-out);
 }
 
 .deck-card__bar--primary {
@@ -286,9 +308,14 @@
   font-weight: 500;
   cursor: pointer;
   transition:
-    border-color var(--motion-fast) var(--ease-standard),
-    color var(--motion-fast) var(--ease-standard),
-    background var(--motion-fast) var(--ease-standard);
+    border-color var(--motion-fast) var(--ease-out),
+    color var(--motion-fast) var(--ease-out),
+    background var(--motion-fast) var(--ease-out),
+    transform var(--motion-press) var(--ease-out);
+}
+
+.deck-card__action:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .deck-card__action:hover:not(:disabled) {
@@ -316,4 +343,10 @@
 .deck-card__action:disabled {
   opacity: 0.52;
   cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deck-card {
+    animation: none !important;
+  }
 }

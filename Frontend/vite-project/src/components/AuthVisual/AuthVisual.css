@@ -102,6 +102,9 @@
   box-shadow:
     0 20px 48px rgba(0, 0, 0, 0.48),
     0 0 0 1px rgba(94, 106, 210, 0.16);
+  transform-style: preserve-3d;
+  will-change: transform;
+  animation: deckai-scale-in var(--motion-enter) var(--ease-out) both;
 }
 
 .auth-visual__slide-top {
@@ -214,6 +217,20 @@
   color: #62666d;
   font-family: var(--font-mono);
   font-size: var(--text-xs);
+}
+
+.auth-visual__slide-rows li,
+.auth-visual__checks li {
+  animation: deckai-item-cascade 280ms var(--ease-out) both;
+  animation-delay: calc(var(--item-index, 0) * 60ms + 80ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-visual__slide-card,
+  .auth-visual__slide-rows li,
+  .auth-visual__checks li {
+    animation: none !important;
+  }
 }
 
 @media (max-width: 900px) {

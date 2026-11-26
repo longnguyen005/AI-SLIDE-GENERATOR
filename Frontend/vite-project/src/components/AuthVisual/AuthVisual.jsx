@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import Icon from '../Icon/Icon';
+import { useTilt3D } from '../../hooks/useMotion';
 import './AuthVisual.css';
 
 const WORKFLOW_HIGHLIGHTS = [
@@ -18,6 +19,9 @@ export default function AuthVisual({
   title = 'Turn ideas into presentations',
   footer = 'DeckAI presentation engineering workspace',
 }) {
+  const cardRef = useRef(null);
+  useTilt3D(cardRef, { maxDeg: 2.8 });
+
   return (
     <section className="auth-visual" aria-hidden="true">
       <div className="auth-visual__grid" />
@@ -38,15 +42,15 @@ export default function AuthVisual({
           </p>
         </div>
 
-        <div className="auth-visual__slide-card">
+        <div ref={cardRef} className="auth-visual__slide-card">
           <div className="auth-visual__slide-top">
             <span className="auth-visual__slide-eyebrow">Executive Summary • Slide 05</span>
             <span className="auth-visual__slide-ratio">16:9 · .pptx</span>
           </div>
           <h3>Q4 Enterprise AI Rollout — Key Takeaways</h3>
           <ul className="auth-visual__slide-rows">
-            {MINI_TAKEAWAYS.map(([num, item]) => (
-              <li key={num}>
+            {MINI_TAKEAWAYS.map(([num, item], index) => (
+              <li key={num} style={{ '--item-index': index }}>
                 <span>{num}</span>
                 <p>{item}</p>
               </li>
@@ -55,8 +59,8 @@ export default function AuthVisual({
         </div>
 
         <ul className="auth-visual__checks">
-          {WORKFLOW_HIGHLIGHTS.map((label) => (
-            <li key={label}>
+          {WORKFLOW_HIGHLIGHTS.map((label, index) => (
+            <li key={label} style={{ '--item-index': index }}>
               <span className="auth-visual__check-icon">
                 <Icon name="check" size={14} />
               </span>

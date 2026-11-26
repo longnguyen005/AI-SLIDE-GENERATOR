@@ -11,6 +11,7 @@
   background: var(--accent-soft);
   font-size: var(--text-sm);
   font-weight: 500;
+  animation: deckai-rise-in var(--motion-base) var(--ease-out) both;
 }
 
 .preview-empty {
@@ -174,6 +175,7 @@
   font-size: var(--text-sm);
   line-height: 1.55;
   overflow-wrap: anywhere;
+  animation: deckai-item-cascade var(--motion-base) var(--ease-out) both;
 }
 
 .export-card {
@@ -234,9 +236,20 @@
   text-align: left;
   cursor: pointer;
   transition:
-    border-color var(--motion-fast) var(--ease-standard),
-    background var(--motion-fast) var(--ease-standard),
-    box-shadow var(--motion-fast) var(--ease-standard);
+    transform var(--motion-base) var(--ease-out),
+    border-color var(--motion-fast) var(--ease-out),
+    background var(--motion-fast) var(--ease-out),
+    box-shadow var(--motion-fast) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .preview-thumbnails button:hover {
+    transform: translate3d(0, -2px, 0);
+  }
+}
+
+.preview-thumbnails button:active {
+  transform: scale(0.98);
 }
 
 .preview-thumbnails button:hover {
